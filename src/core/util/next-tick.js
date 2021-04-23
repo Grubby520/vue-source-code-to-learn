@@ -40,14 +40,19 @@ let timerFunc;
 // Promise is available, we will use it:
 /* istanbul ignore next, $flow-disable-line */
 if (typeof Promise !== "undefined" && isNative(Promise)) {
-  const p = Promise.resolve();
+  const p = Promise.resolve(); // 首选Promise
   timerFunc = () => {
-    p.then(flushCallbacks);
+    p.then(flushCallbacks); // flushCallbacks 放入微任务队列
     // In problematic UIWebViews, Promise.then doesn't completely break, but
     // it can get stuck in a weird state where callbacks are pushed into the
     // microtask queue but the queue isn't being flushed, until the browser
     // needs to do some other work, e.g. handle a timer. Therefore we can
     // "force" the microtask queue to be flushed by adding an empty timer.
+    /**
+     * 在有问题的UIWebViews中，Promise.then不会完全中断，但是它可能会陷入怪异的状态，
+     * 在这种状态下，回调被推入微任务队列，但队列没有被刷新，直到浏览器需要执行其他工作，例如处理一个计时器。
+     * 因此，我们可以通过添加空计时器来“强制”刷新微任务队列。
+     */
     if (isIOS) setTimeout(noop);
   };
   isUsingMicroTask = true;
@@ -115,8 +120,11 @@ export function nextTick(cb?: Function, ctx?: Object) {
   if (!pending) {
     pending = true;
     /**
-     * 浏览器的任务队列有一个优选顺序
-     *
+     * 浏览器的任务队列有一个高优先级顺序
+     * 1 Promise 微任务队列
+     * 2 MutationObserver 它提供了监视对DOM树所做更改的能力
+     * 3 setImmediate(非标准)该方法用来把一些需要长时间运行的操作放在一个回调函数里，在浏览器完成后面的其他语句后，就立刻执行这个回调函数
+     * 4 setTimeout 宏任务
      */
     timerFunc();
   }

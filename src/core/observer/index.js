@@ -223,6 +223,7 @@ export function defineReactive(
  * Set a property on an object. Adds the new property and
  * triggers change notification if the property doesn't
  * already exist.
+ * 添加不存在的属性，并进行响应式处理
  */
 export function set(target: Array<any> | Object, key: any, val: any): any {
   if (
@@ -235,14 +236,15 @@ export function set(target: Array<any> | Object, key: any, val: any): any {
   }
   if (Array.isArray(target) && isValidArrayIndex(key)) {
     target.length = Math.max(target.length, key);
-    target.splice(key, 1, val);
+    target.splice(key, 1, val); // 数组-splice 新增
     return val;
   }
   if (key in target && !(key in Object.prototype)) {
-    target[key] = val;
+    target[key] = val; // 对象 - a[b] 新增
     return val;
   }
   const ob = (target: any).__ob__;
+  // vmCount的作用：不能向vm实例或它的根$data动态添加响应式属性，而是在data里面提前声明好
   if (target._isVue || (ob && ob.vmCount)) {
     process.env.NODE_ENV !== "production" &&
       warn(
@@ -252,16 +254,19 @@ export function set(target: Array<any> | Object, key: any, val: any): any {
     return val;
   }
   if (!ob) {
-    target[key] = val;
+    // 没有__ob__属性，说明target不是响应式对象
+    target[key] = val; // 则只添加，不做响应式处理
     return val;
   }
-  defineReactive(ob.value, key, val);
-  ob.dep.notify();
+  defineReactive(ob.value, key, val); // 响应式处理-Object.defineProperty设置getter和setter
+  ob.dep.notify(); // 遍历watchers，触发watcher.update()
   return val;
 }
 
 /**
  * Delete a property and trigger change if necessary.
+ * 1.从数组或者对象中删除key对应的property
+ * 2.通知更新， .__ob__.dep.notify()
  */
 export function del(target: Array<any> | Object, key: any) {
   if (
@@ -273,11 +278,12 @@ export function del(target: Array<any> | Object, key: any) {
     );
   }
   if (Array.isArray(target) && isValidArrayIndex(key)) {
-    target.splice(key, 1);
+    target.splice(key, 1); // 数组，splice删除
     return;
   }
   const ob = (target: any).__ob__;
   if (target._isVue || (ob && ob.vmCount)) {
+    // 兼容判断，避免删除Vue instance or its root $data
     process.env.NODE_ENV !== "production" &&
       warn(
         "Avoid deleting properties on a Vue instance or its root $data " +
@@ -286,23 +292,32 @@ export function del(target: Array<any> | Object, key: any) {
     return;
   }
   if (!hasOwn(target, key)) {
+    // 兼容判断-属性不存在
     return;
   }
-  delete target[key];
+  delete target[key]; // 对象，delete删除
   if (!ob) {
+    // 兼容判断-不是响应式数据，就不用notify
     return;
   }
   ob.dep.notify();
 }
 
 /**
+ * defineProperty监听不到数组长度变化的，监听数组所有索引的成本太高
+ * 数组是单独调用observeArray方法-数据描述符，不是defineReactive方法-存储描述符，
+ * 使用defineProperty对Array的7个原型方法进行拦截，把被拦截的数据的原型指向改造后的原型（arrayMethods）
+ * 并没有直接修改Array.prototype(隔离，不污染全局的Array)，而是把arrayMethods赋值给value的__proto__(现代浏览器都有实现),只对data中的属性有效
+ *
  * Collect dependencies on array elements when the array is touched, since
  * we cannot intercept array element access like property getters.
+ * 拦截数组的元素不像属性getters函数那样，只能当数组touched时，去递归的收集依赖关系
+ * qs: 怎么算是touched?
  */
 function dependArray(value: Array<any>) {
   for (let e, i = 0, l = value.length; i < l; i++) {
     e = value[i];
-    e && e.__ob__ && e.__ob__.dep.depend();
+    e && e.__ob__ && e.__ob__.dep.depend(); // &&运算符，大佬也这样玩，没毛病
     if (Array.isArray(e)) {
       //
       dependArray(e); // 前面递归阶段无法为数组中的元素添加依赖，得递归遍历 depend() 收集依赖
