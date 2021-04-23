@@ -380,6 +380,7 @@ export function stateMixin(Vue: Class<Component>) {
     return this._props;
   };
   if (process.env.NODE_ENV !== "production") {
+    //
     dataDef.set = function () {
       warn(
         "Avoid replacing instance root $data. " +
@@ -387,10 +388,12 @@ export function stateMixin(Vue: Class<Component>) {
         this
       );
     };
+    // props是只读，不能设置setter
     propsDef.set = function () {
       warn(`$props is readonly.`, this);
     };
   }
+  // 将data和props挂载到Vue.prototype上，直接使用this.$data访问data
   Object.defineProperty(Vue.prototype, "$data", dataDef);
   Object.defineProperty(Vue.prototype, "$props", propsDef);
 
@@ -415,7 +418,7 @@ export function stateMixin(Vue: Class<Component>) {
       return createWatcher(vm, expOrFn, cb, options);
     }
     options = options || {};
-    // ? user是什么
+    // ? user是什么 表示是用户watcher还是渲染watcher
     options.user = true;
     const watcher = new Watcher(vm, expOrFn, cb, options);
     // 如果设置immediate为true，立即执行一次回调函数
