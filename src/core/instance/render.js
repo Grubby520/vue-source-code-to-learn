@@ -84,12 +84,13 @@ export function setCurrentRenderingInstance(vm: Component) {
 
 export function renderMixin(Vue: Class<Component>) {
   // install runtime convenience helpers
-  installRenderHelpers(Vue.prototype);
+  installRenderHelpers(Vue.prototype); // 安装大量和渲染相关的简写的工具函数，用于compiler生成的render fn中
 
   Vue.prototype.$nextTick = function (fn: Function) {
-    return nextTick(fn, this);
+    return nextTick(fn, this); // 加入浏览器异步任务队列（插队）
   };
 
+  // 不考虑异常处理代码，核心-render函数生成VNode
   Vue.prototype._render = function (): VNode {
     const vm: Component = this;
     const { render, _parentVnode } = vm.$options;
@@ -104,7 +105,7 @@ export function renderMixin(Vue: Class<Component>) {
 
     // set parent vnode. this allows render functions to have access
     // to the data on the placeholder node.
-    vm.$vnode = _parentVnode;
+    vm.$vnode = _parentVnode; // 使渲染函数可以访问占位符节点上的数据
     // render self
     let vnode;
     try {
@@ -112,7 +113,7 @@ export function renderMixin(Vue: Class<Component>) {
       // separately from one another. Nested component's render fns are called
       // when parent component is patched.
       currentRenderingInstance = vm;
-      vnode = render.call(vm._renderProxy, vm.$createElement);
+      vnode = render.call(vm._renderProxy, vm.$createElement); // vm.$options.prototype.render 返回vnode
     } catch (e) {
       handleError(e, vm, `render`);
       // return error render result,
@@ -130,14 +131,14 @@ export function renderMixin(Vue: Class<Component>) {
           vnode = vm._vnode;
         }
       } else {
-        vnode = vm._vnode;
+        vnode = vm._vnode; // 异常，就返回之前的vnode
       }
     } finally {
       currentRenderingInstance = null;
     }
     // if the returned array contains only a single node, allow it
     if (Array.isArray(vnode) && vnode.length === 1) {
-      vnode = vnode[0];
+      vnode = vnode[0]; // 这个可以，意义在于?
     }
     // return empty vnode in case the render function errored out
     if (!(vnode instanceof VNode)) {
@@ -151,7 +152,7 @@ export function renderMixin(Vue: Class<Component>) {
       vnode = createEmptyVNode();
     }
     // set parent
-    vnode.parent = _parentVnode;
+    vnode.parent = _parentVnode; // 还没搞懂parent的作用?
     return vnode;
   };
 }

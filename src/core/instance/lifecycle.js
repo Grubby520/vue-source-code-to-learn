@@ -65,9 +65,12 @@ export function initLifecycle(vm: Component) {
 export function lifecycleMixin(Vue: Class<Component>) {
   // 负责更新页面，是首次渲染、后续更新和patch的入口
   Vue.prototype._update = function (vnode: VNode, hydrating?: boolean) {
+    console.log(vnode);
     const vm: Component = this;
+    // old
     const prevEl = vm.$el;
     const prevVnode = vm._vnode;
+    // new
     const restoreActiveInstance = setActiveInstance(vm);
     vm._vnode = vnode; // 可怕的vnode
     // Vue.prototype.__patch__ is injected in entry points
@@ -76,51 +79,55 @@ export function lifecycleMixin(Vue: Class<Component>) {
       // initial render 首次渲染
       vm.$el = vm.__patch__(vm.$el, vnode, hydrating, false /* removeOnly */);
     } else {
-      // updates
+      // updates 响应式数据更新 新旧vnode
       vm.$el = vm.__patch__(prevVnode, vnode);
     }
-    restoreActiveInstance();
+    restoreActiveInstance(); // 更新完后
     // update __vue__ reference
     if (prevEl) {
       prevEl.__vue__ = null;
     }
     if (vm.$el) {
-      vm.$el.__vue__ = vm;
+      vm.$el.__vue__ = vm; // 更新实例引用
     }
-    // if parent is an HOC, update its $el as well
+    // if parent is an HOC (High Order Component), update its $el as well
     if (vm.$vnode && vm.$parent && vm.$vnode === vm.$parent._vnode) {
       vm.$parent.$el = vm.$el;
     }
     // updated hook is called by the scheduler to ensure that children are
-    // updated in a parent's updated hook.
+    // updated in a parent's updated hook. 能确保子级都能在父级更新hook里得到同步更新
   };
 
+  // 强制更新
   Vue.prototype.$forceUpdate = function () {
     const vm: Component = this;
     if (vm._watcher) {
-      vm._watcher.update();
+      vm._watcher.update(); // 强制组件重新渲染（只影响自己和带slot的子组件）
     }
   };
 
+  // 内部用的，完全销毁一个实例。清理它与其它实例的连接，解绑它的全部指令及事件监听器
+  // 我们顶多用 beforeDestroy destroyed 钩子
   Vue.prototype.$destroy = function () {
     const vm: Component = this;
     if (vm._isBeingDestroyed) {
+      // N多状态，优化手段之一，用boolean来判断（难道是异步任务?）
       return;
     }
-    callHook(vm, "beforeDestroy");
+    callHook(vm, "beforeDestroy"); // 调用钩子回调函数
     vm._isBeingDestroyed = true;
     // remove self from parent
     const parent = vm.$parent;
     if (parent && !parent._isBeingDestroyed && !vm.$options.abstract) {
-      remove(parent.$children, vm);
+      remove(parent.$children, vm); // 清理与父实例的连接
     }
     // teardown watchers
     if (vm._watcher) {
-      vm._watcher.teardown();
+      vm._watcher.teardown(); // 解绑事件监听器
     }
     let i = vm._watchers.length;
     while (i--) {
-      vm._watchers[i].teardown();
+      vm._watchers[i].teardown(); // 解绑 _watchers 所有依赖
     }
     // remove reference from data ob
     // frozen object may not have observer.
@@ -130,18 +137,18 @@ export function lifecycleMixin(Vue: Class<Component>) {
     // call the last hook...
     vm._isDestroyed = true;
     // invoke destroy hooks on current rendered tree
-    vm.__patch__(vm._vnode, null);
+    vm.__patch__(vm._vnode, null); // 更新视图？ 销毁节点？
     // fire destroyed hook
-    callHook(vm, "destroyed");
+    callHook(vm, "destroyed"); // 调用钩子回调函数
     // turn off all instance listeners.
-    vm.$off();
+    vm.$off(); // 解绑所有自定义监听器
     // remove __vue__ reference
     if (vm.$el) {
       vm.$el.__vue__ = null;
     }
     // release circular reference (#6759)
     if (vm.$vnode) {
-      vm.$vnode.parent = null;
+      vm.$vnode.parent = null; // ???
     }
   };
 }
@@ -180,6 +187,7 @@ export function mountComponent(
   let updateComponent;
   /* istanbul ignore if */
   if (process.env.NODE_ENV !== "production" && config.performance && mark) {
+    // performance配置，在浏览器开发工具的性能/时间线面板中启用对组件初始化、编译、渲染和打补丁的性能追踪
     updateComponent = () => {
       const name = vm._name;
       const id = vm._uid;
@@ -189,12 +197,12 @@ export function mountComponent(
       mark(startTag);
       const vnode = vm._render();
       mark(endTag);
-      measure(`vue ${name} render`, startTag, endTag);
+      measure(`vue ${name} render`, startTag, endTag); // 渲染性能
 
       mark(startTag);
       vm._update(vnode, hydrating);
       mark(endTag);
-      measure(`vue ${name} patch`, startTag, endTag);
+      measure(`vue ${name} patch`, startTag, endTag); // 打补丁性能
     };
   } else {
     updateComponent = () => {

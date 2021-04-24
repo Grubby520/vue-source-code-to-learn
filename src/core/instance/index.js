@@ -35,6 +35,10 @@ eventsMixin(Vue);
  * .$destroy
  */
 lifecycleMixin(Vue);
+/**
+ * ._render
+ * .$nextTick
+ */
 renderMixin(Vue);
 
 export default Vue;
