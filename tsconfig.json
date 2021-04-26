@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "sourceMap": true,
+    "allowJs": true
+  },
+  "include": [
+    "root"
+  ],
+  "exclude": [
+    "src"
+  ]
+}
