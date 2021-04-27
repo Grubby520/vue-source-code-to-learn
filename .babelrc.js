@@ -9,6 +9,7 @@ const babelPresetFlowVue = {
 module.exports = {
   presets: [
     require('@babel/preset-env'),
+    "@babel/preset-flow",
     // require('babel-preset-flow-vue')
     babelPresetFlowVue
   ],

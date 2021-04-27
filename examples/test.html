@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue Start</title>
+</head>
+<body>
+    <div id="app">
+        {{msg}}
+    </div>
+    <script src="../dist/vue.js"></script>
+    <script>
+        debugger;
+        const app = new Vue({
+            el: '#app',
+            data() {
+                return {
+                    msg: 'vue init'
+                }
+            }
+        });
+        console.log(app)
+    </script>
+</body>
+</html>
