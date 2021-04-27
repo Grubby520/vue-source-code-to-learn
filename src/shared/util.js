@@ -133,7 +133,7 @@ export const isReservedAttribute = makeMap('key,ref,slot,slot-scope,is')
 export function remove (arr: Array<any>, item: any): Array<any> | void {
   if (arr.length) {
     const index = arr.indexOf(item)
-    if (index > -1) {
+    if (index > -1) { // 没有使用 !== ,而是使用的 > （书里也有提及）
       return arr.splice(index, 1)
     }
   }
@@ -196,7 +196,7 @@ function polyfillBind (fn: Function, ctx: Object): Function {
     return l
       ? l > 1
         ? fn.apply(ctx, arguments)
-        : fn.call(ctx, a)
+        : fn.call(ctx, a)起
       : fn.call(ctx)
   }
 
