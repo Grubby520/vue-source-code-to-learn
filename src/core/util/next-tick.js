@@ -1,4 +1,4 @@
-/* @flow */
+/* @flow 5 */
 /* globals MutationObserver */
 
 import { noop } from "shared/util";

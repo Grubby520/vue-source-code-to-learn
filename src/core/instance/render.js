@@ -28,9 +28,10 @@ export function initRender(vm: Component) {
   // so that we get proper render context inside it.
   // args order: tag, data, children, normalizationType, alwaysNormalize
   // internal version is used by render functions compiled from templates
+  // 模板convert成render函数时使用
   vm._c = (a, b, c, d) => createElement(vm, a, b, c, d, false);
   // normalization is always applied for the public version, used in
-  // user-written render functions.
+  // user-written render functions. 用户手写render函数的时候使用
   vm.$createElement = (a, b, c, d) => createElement(vm, a, b, c, d, true);
 
   // $attrs & $listeners are exposed for easier HOC creation.
@@ -90,7 +91,10 @@ export function renderMixin(Vue: Class<Component>) {
     return nextTick(fn, this); // 加入浏览器异步任务队列（插队）
   };
 
-  // 不考虑异常处理代码，核心-render函数生成VNode
+  /**
+   * 生成VNode的核心函数 _render 
+   * 核心：render.call(vm._renderProxy, vm.$createElement)
+   */
   Vue.prototype._render = function (): VNode {
     const vm: Component = this;
     const { render, _parentVnode } = vm.$options;
@@ -105,7 +109,7 @@ export function renderMixin(Vue: Class<Component>) {
 
     // set parent vnode. this allows render functions to have access
     // to the data on the placeholder node.
-    vm.$vnode = _parentVnode; // 使渲染函数可以访问占位符节点上的数据
+    vm.$vnode = _parentVnode; // 使渲染函数可以访问占位符节点上的数据，存的是 parent vnode
     // render self
     let vnode;
     try {
@@ -113,7 +117,11 @@ export function renderMixin(Vue: Class<Component>) {
       // separately from one another. Nested component's render fns are called
       // when parent component is patched.
       currentRenderingInstance = vm;
-      vnode = render.call(vm._renderProxy, vm.$createElement); // vm.$options.prototype.render 返回vnode
+      vnode = render.call(vm._renderProxy, vm.$createElement); // vm.$options.render 返回vnode
+//       function anonymous(
+// ) {
+// with(this){return _c('div',{attrs:{"id":"app"}},[_c('p',{attrs:{"id":"p"}},[_v(_s(msg))]),_v(" "),_c('button',{attrs:{"id":"btn"},on:{"click":handleClick}},[_v("Click Me")]),_v(" "),_c('p',[_v(_s(obj))])])}
+// }
     } catch (e) {
       handleError(e, vm, `render`);
       // return error render result,
@@ -152,7 +160,7 @@ export function renderMixin(Vue: Class<Component>) {
       vnode = createEmptyVNode();
     }
     // set parent
-    vnode.parent = _parentVnode; // 还没搞懂parent的作用?
+    vnode.parent = _parentVnode; // 还没搞懂parent的作用? _isMounted or ...?
     return vnode;
   };
 }

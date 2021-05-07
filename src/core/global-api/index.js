@@ -35,7 +35,7 @@ export function initGlobalAPI(Vue: GlobalAPI) {
   // exposed util methods.
   // NOTE: these are not considered part of the public API - avoid relying on
   // them unless you are aware of the risk.
-  // 除非你知道使用风险，否则不要轻易使用这些public api
+  // 除非你知道使用风险，否则不要轻易使用这些public api(而且会经常发生变化)
   Vue.util = {
     warn,
     extend,
@@ -54,7 +54,7 @@ export function initGlobalAPI(Vue: GlobalAPI) {
   };
 
   Vue.options = Object.create(null);
-  // components,directives,filters
+  // components, directives, filters
   ASSET_TYPES.forEach((type) => {
     Vue.options[type + "s"] = Object.create(null)
   });
@@ -63,10 +63,10 @@ export function initGlobalAPI(Vue: GlobalAPI) {
   // components with in Weex's multi-instance scenarios.
   Vue.options._base = Vue;
 
-  extend(Vue.options.components, builtInComponents);
+  extend(Vue.options.components, builtInComponents); // keep-alive
 
-  initUse(Vue);
-  initMixin(Vue);
-  initExtend(Vue);
-  initAssetRegisters(Vue);
+  initUse(Vue); // .use 安装插件 { install } 
+  initMixin(Vue); // .mixin
+  initExtend(Vue);  // .extend
+  initAssetRegisters(Vue); // component directive filter
 }

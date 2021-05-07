@@ -196,7 +196,7 @@ function polyfillBind (fn: Function, ctx: Object): Function {
     return l
       ? l > 1
         ? fn.apply(ctx, arguments)
-        : fn.call(ctx, a)起
+        : fn.call(ctx, a)
       : fn.call(ctx)
   }
 

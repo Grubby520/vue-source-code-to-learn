@@ -82,6 +82,7 @@ export function createPatchFunction (backend) {
     }
   }
 
+  // 内部定义了一堆处理函数
   function emptyNodeAt (elm) {
     return new VNode(nodeOps.tagName(elm).toLowerCase(), {}, [], undefined, elm)
   }
@@ -122,6 +123,7 @@ export function createPatchFunction (backend) {
 
   let creatingElmInVPre = 0
 
+  // 核心-通过虚拟节点创建真实的DOM并插入到其父节点种
   function createElm (
     vnode,
     insertedVnodeQueue,
@@ -131,6 +133,9 @@ export function createPatchFunction (backend) {
     ownerArray,
     index
   ) {
+
+    console.log(arguments)
+
     if (isDef(vnode.elm) && isDef(ownerArray)) {
       // This vnode was used in a previous render!
       // now it's used as a new node, overwriting its elm would cause
@@ -142,6 +147,7 @@ export function createPatchFunction (backend) {
 
     vnode.isRootInsert = !nested // for transition enter check
     if (createComponent(vnode, insertedVnodeQueue, parentElm, refElm)) {
+      // 创建子组件
       return
     }
 
@@ -162,11 +168,12 @@ export function createPatchFunction (backend) {
           )
         }
       }
-
+      // createElementNS 创建一个具有指定的命名空间URI和限定名称的元素
+      // createElement 创建一个由标签名称 tagName 指定的 HTML 元素
       vnode.elm = vnode.ns
         ? nodeOps.createElementNS(vnode.ns, tag)
         : nodeOps.createElement(tag, vnode)
-      setScope(vnode)
+      setScope(vnode) // scoped css
 
       /* istanbul ignore if */
       if (__WEEX__) {
@@ -178,9 +185,9 @@ export function createPatchFunction (backend) {
           if (isDef(data)) {
             invokeCreateHooks(vnode, insertedVnodeQueue)
           }
-          insert(parentElm, vnode.elm, refElm)
+          insert(parentElm, vnode.elm, refElm) // 把 DOM 插入到父节点种
         }
-        createChildren(vnode, children, insertedVnodeQueue)
+        createChildren(vnode, children, insertedVnodeQueue) // 递归调用 一种常用的深度优先的遍历算法
         if (appendAsTree) {
           if (isDef(data)) {
             invokeCreateHooks(vnode, insertedVnodeQueue)
@@ -273,10 +280,10 @@ export function createPatchFunction (backend) {
     if (isDef(parent)) {
       if (isDef(ref)) {
         if (nodeOps.parentNode(ref) === parent) {
-          nodeOps.insertBefore(parent, elm, ref)
+          nodeOps.insertBefore(parent, elm, ref) // 插入到父节点中 本质就是DOM的原生API
         }
       } else {
-        nodeOps.appendChild(parent, elm)
+        nodeOps.appendChild(parent, elm) // 本质就是DOM的原生API
       }
     }
   }
@@ -286,10 +293,11 @@ export function createPatchFunction (backend) {
       if (process.env.NODE_ENV !== 'production') {
         checkDuplicateKeys(children)
       }
-      for (let i = 0; i < children.length; ++i) {
-        createElm(children[i], insertedVnodeQueue, vnode.elm, null, true, children, i)
+      for (let i = 0; i < children.length; ++i) { // 遍历children
+        createElm(children[i], insertedVnodeQueue, vnode.elm, null, true, children, i) // 递归调用 createElm, 典型的深度优先的遍历算法
       }
     } else if (isPrimitive(vnode.text)) {
+      // 把 vnode.elm 作为父容器的 DOM 节点占位符传入
       nodeOps.appendChild(vnode.elm, nodeOps.createTextNode(String(vnode.text)))
     }
   }
@@ -697,7 +705,15 @@ export function createPatchFunction (backend) {
     }
   }
 
+  /**
+  * 最终返回一个patch函数
+  * oldVnode 旧的vnode节点，也可能是一个DOM对象
+  * vnode 执行render函数的返回值
+  * hydrating 是否是服务端渲染
+  * removeOnly 是个 transition-group 用的 ?
+  */
   return function patch (oldVnode, vnode, hydrating, removeOnly) {
+    console.log(arguments)
     if (isUndef(vnode)) {
       if (isDef(oldVnode)) invokeDestroyHook(oldVnode)
       return
@@ -717,7 +733,7 @@ export function createPatchFunction (backend) {
         patchVnode(oldVnode, vnode, insertedVnodeQueue, null, null, removeOnly)
       } else {
         if (isRealElement) {
-          // mounting to a real element
+          // mounting to a real element 挂载到一个真正的DOM上
           // check if this is server-rendered content and if we can perform
           // a successful hydration.
           if (oldVnode.nodeType === 1 && oldVnode.hasAttribute(SSR_ATTR)) {

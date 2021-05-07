@@ -98,6 +98,15 @@ const componentVNodeHooks = {
 
 const hooksToMerge = Object.keys(componentVNodeHooks)
 
+/**
+ * .vue文件 Component类型
+ * @param {*} Ctor 
+ * @param {*} data 
+ * @param {*} context 
+ * @param {*} children 
+ * @param {*} tag 
+ * @returns 
+ */
 export function createComponent (
   Ctor: Class<Component> | Function | Object | void,
   data: ?VNodeData,

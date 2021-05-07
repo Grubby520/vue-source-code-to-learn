@@ -25,6 +25,7 @@ const ALWAYS_NORMALIZE = 2
 
 // wrapper function for providing a more flexible interface
 // without getting yelled at by flow
+// 包装器函数，用于提供更灵活的接口，而不会被流抱怨
 export function createElement (
   context: Component,
   tag: any,
@@ -33,7 +34,11 @@ export function createElement (
   normalizationType: any,
   alwaysNormalize: boolean
 ): VNode | Array<VNode> {
+
+  console.log(arguments)
+  
   if (Array.isArray(data) || isPrimitive(data)) {
+    // 对入参做了兼容处理，使其更加灵活
     normalizationType = children
     children = data
     data = undefined
@@ -44,6 +49,16 @@ export function createElement (
   return _createElement(context, tag, data, children, normalizationType)
 }
 
+/**
+ * @param {*} context VNode的ctx上下文环境
+ * @param {*} tag 标签
+ * @param {*} data VNode数据
+ * @param {*} children VNode子节点
+ * @param {*} normalizationType 子节点规范的类型，区别render函数是编译生成还是用户手写
+ * @returns 
+ * 
+ * normalizeChildren  simpleNormalizeChildren  VNode  createComponent
+ */
 export function _createElement (
   context: Component,
   tag?: string | Class<Component> | Function | Object,
@@ -88,12 +103,14 @@ export function _createElement (
     children.length = 0
   }
   if (normalizationType === ALWAYS_NORMALIZE) {
+    // hand-written render functions
     children = normalizeChildren(children)
   } else if (normalizationType === SIMPLE_NORMALIZE) {
+    // 调用场景是 render 函数是编译生成的。理论上编译生成的 children 都已经是 VNode 类型的，但这里有一个例外，就是 functional component 函数式组件返回的是一个数组而不是一个根节点，所以会通过 Array.prototype.concat 方法把整个 children 数组打平，让它的深度只有一层
     children = simpleNormalizeChildren(children)
   }
   let vnode, ns
-  if (typeof tag === 'string') {
+  if (typeof tag === 'string') { // e.g. 'div'
     let Ctor
     ns = (context.$vnode && context.$vnode.ns) || config.getTagNamespace(tag)
     if (config.isReservedTag(tag)) {
@@ -104,15 +121,16 @@ export function _createElement (
           context
         )
       }
+      // 内置的节点
       vnode = new VNode(
         config.parsePlatformTagName(tag), data, children,
         undefined, undefined, context
       )
     } else if ((!data || !data.pre) && isDef(Ctor = resolveAsset(context.$options, 'components', tag))) {
-      // component
+      // component 已注册的组件名
       vnode = createComponent(Ctor, data, context, children, tag)
     } else {
-      // unknown or unlisted namespaced elements
+      // unknown or unlisted namespaced elements 创建一个未知标签的VNode
       // check at runtime because it may get assigned a namespace when its
       // parent normalizes children
       vnode = new VNode(
@@ -122,6 +140,7 @@ export function _createElement (
     }
   } else {
     // direct component options / constructor
+    // tag 是一个 Component 类型 render(h => h(App)) // App 就是一个.vue文件
     vnode = createComponent(tag, data, context, children)
   }
   if (Array.isArray(vnode)) {

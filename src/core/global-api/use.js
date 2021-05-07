@@ -11,7 +11,7 @@ export function initUse(Vue: GlobalAPI) {
    * @returns Vue 实例
    */
   Vue.use = function (plugin: Function | Object) {
-    console.log(this);
+    // console.log(this);
     const installedPlugins =
       this._installedPlugins || (this._installedPlugins = []);
     if (installedPlugins.indexOf(plugin) > -1) {
@@ -27,7 +27,7 @@ export function initUse(Vue: GlobalAPI) {
       plugin.apply(null, args); // 不是对象，没有install属性，而是函数，apply
     }
     installedPlugins.push(plugin);
-    console.log(installedPlugins);
+    // console.log(installedPlugins);
     return this;
   };
 }

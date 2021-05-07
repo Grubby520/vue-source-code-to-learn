@@ -157,6 +157,7 @@ export function defineReactive(
   customSetter?: ?Function,
   shallow?: boolean
 ) {
+  // debugger
   const dep = new Dep(); // 一个key，一个dep实例
 
   const property = Object.getOwnPropertyDescriptor(obj, key);
@@ -177,6 +178,7 @@ export function defineReactive(
     enumerable: true,
     configurable: true,
     get: function reactiveGetter() {
+      // debugger
       const value = getter ? getter.call(obj) : val;
       /**
        * Dep.target 为 Dep 类的一个静态属性，值为 watcher，在实例化 Watcher 时会被设置
@@ -196,6 +198,7 @@ export function defineReactive(
       return value;
     },
     set: function reactiveSetter(newVal) {
+      // debugger
       const value = getter ? getter.call(obj) : val; // 旧值
       /* eslint-disable no-self-compare */
       if (newVal === value || (newVal !== newVal && value !== value)) {

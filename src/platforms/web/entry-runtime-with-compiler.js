@@ -4,7 +4,7 @@ import config from "core/config";
 import { warn, cached } from "core/util/index";
 import { mark, measure } from "core/util/perf";
 
-import Vue from "./runtime/index";
+import Vue from "./runtime/index"; // 来源
 import { query } from "./util/index";
 import { compileToFunctions } from "./compiler/index";
 import {
@@ -12,17 +12,18 @@ import {
   shouldDecodeNewlinesForHref,
 } from "./util/compat";
 
-const idToTemplate = cached((id) => {
+const idToTemplate = cached((id) => { // 没看懂cached的意义
   const el = query(id);
   return el && el.innerHTML;
 });
 
-const mount = Vue.prototype.$mount;
+const mount = Vue.prototype.$mount; // 缓存 public method
 Vue.prototype.$mount = function (
   el?: string | Element,
   hydrating?: boolean
 ): Component {
-  el = el && query(el);
+  console.log(el)
+  el = el && query(el); // 字符串转成DOM对象
 
   /* istanbul ignore if */
   if (el === document.body || el === document.documentElement) {
@@ -32,7 +33,8 @@ Vue.prototype.$mount = function (
       );
     return this;
   }
-
+  debugger
+  // 取值的优先级 render、 template、 el （只取其一，后面的会被忽略）
   const options = this.$options;
   // resolve template/el and convert to render function
   if (!options.render) {
@@ -41,6 +43,7 @@ Vue.prototype.$mount = function (
     if (template) {
       if (typeof template === "string") {
         if (template.charAt(0) === "#") {
+          // 如果值以 # 开始，则它将被用作选择符，并使用匹配元素的 innerHTML 作为模板(<script type="x-template">)
           template = idToTemplate(template);
           /* istanbul ignore if */
           if (process.env.NODE_ENV !== "production" && !template) {
@@ -51,6 +54,7 @@ Vue.prototype.$mount = function (
           }
         }
       } else if (template.nodeType) {
+        // DOM对象
         template = template.innerHTML;
       } else {
         if (process.env.NODE_ENV !== "production") {
@@ -67,7 +71,7 @@ Vue.prototype.$mount = function (
       if (process.env.NODE_ENV !== "production" && config.performance && mark) {
         mark("compile");
       }
-
+      // 入口 compileToFunctions
       const { render, staticRenderFns } = compileToFunctions(
         template,
         {
@@ -79,7 +83,7 @@ Vue.prototype.$mount = function (
         },
         this
       );
-      options.render = render;
+      options.render = render; // 最终转成render方法
       options.staticRenderFns = staticRenderFns;
 
       /* istanbul ignore if */
@@ -89,7 +93,7 @@ Vue.prototype.$mount = function (
       }
     }
   }
-  return mount.call(this, el, hydrating);
+  return mount.call(this, el, hydrating); // 最终，调用原先原型上的 $mount 挂载
 };
 
 /**
@@ -98,6 +102,7 @@ Vue.prototype.$mount = function (
  */
 function getOuterHTML(el: Element): string {
   if (el.outerHTML) {
+    console.log(el.outerHTML)
     return el.outerHTML;
   } else {
     const container = document.createElement("div");
@@ -108,4 +113,4 @@ function getOuterHTML(el: Element): string {
 
 Vue.compile = compileToFunctions;
 
-export default Vue;
+export default Vue; // 最终的Vue

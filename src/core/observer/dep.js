@@ -1,5 +1,5 @@
 /* @flow */
-
+// 2
 import type Watcher from "./watcher";
 import { remove } from "../util/index";
 import config from "../config";
@@ -34,7 +34,7 @@ export default class Dep {
 
   // ? watcher中添加dep
   depend() {
-    console.log(Dep.target);
+    // console.log(Dep.target);
     if (Dep.target) {
       Dep.target.addDep(this);
     }

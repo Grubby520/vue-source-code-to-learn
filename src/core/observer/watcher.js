@@ -156,14 +156,20 @@ export default class Watcher {
         dep.removeSub(this);
       }
     }
+
+    // 交换
     let tmp = this.depIds;
     this.depIds = this.newDepIds;
     this.newDepIds = tmp;
-    this.newDepIds.clear();
+
+    this.newDepIds.clear(); // clean up
+
+    // 交换
     tmp = this.deps;
     this.deps = this.newDeps;
     this.newDeps = tmp;
-    this.newDeps.length = 0;
+
+    this.newDeps.length = 0; // clean up
   }
 
   /**

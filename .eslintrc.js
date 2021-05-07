@@ -1,26 +1,30 @@
 module.exports = {
   root: true,
-  parserOptions: {
-    parser: require.resolve('babel-eslint'),
-    ecmaVersion: 2018,
-    sourceType: 'module'
-  },
+  parser:  '@typescript-eslint/parser',
+  // parserOptions: {
+  //   parser: require.resolve('babel-eslint'),
+  //   ecmaVersion: 2018,
+  //   sourceType: 'module'
+  // },
   env: {
+    browser: true,
+    commonjs: true,
     es6: true,
-    node: true,
-    browser: true
+    node: true
   },
   plugins: [
-    "flowtype"
+    '@typescript-eslint',
+    // "flowtype"
   ],
   extends: [
-    "eslint:recommended",
-    "plugin:flowtype/recommended"
+    'plugin:@typescript-eslint/recommended',
+    // "eslint:recommended",
+    // "plugin:flowtype/recommended"
   ],
-  globals: {
-    "__WEEX__": true,
-    "WXEnvironment": true
-  },
+  // globals: {
+  //   "__WEEX__": true,
+  //   "WXEnvironment": true
+  // },
   rules: {
     'no-console': process.env.NODE_ENV !== 'production' ? 0 : 2,
     'no-useless-escape': 0,

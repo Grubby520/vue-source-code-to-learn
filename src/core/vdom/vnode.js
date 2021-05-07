@@ -1,5 +1,10 @@
 /* @flow */
-
+// 3
+/**
+ * JS 对象去描述一个 DOM 节点
+ * 核心定义无非就几个关键属性，标签名、数据、子节点、键值等，
+ * 其它属性都是用来扩展 VNode 的灵活性以及实现一些特殊 feature 的
+ */
 export default class VNode {
   tag: string | void;
   data: VNodeData | void;

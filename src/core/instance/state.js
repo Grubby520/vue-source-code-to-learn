@@ -43,6 +43,7 @@ export function proxy(target: Object, sourceKey: string, key: string) {
   sharedPropertyDefinition.set = function proxySetter(val) {
     this[sourceKey][key] = val;
   };
+  // 考点：如何实现this.xx获取data里的数据
   Object.defineProperty(target, key, sharedPropertyDefinition);
 }
 
@@ -100,7 +101,7 @@ function initProps(vm: Component, propsOptions: Object) {
   if (!isRoot) {
     toggleObserving(false); // 根节点特殊处理
   }
-  console.log(propsOptions);
+  // console.log(propsOptions);
   for (const key in propsOptions) {
     keys.push(key); // 缓存起来
     const value = validateProp(key, propsOptions, propsData, vm); // return propsData[key]的默认值
@@ -307,7 +308,7 @@ function createGetterInvoker(fn) {
 
 function initMethods(vm: Component, methods: Object) {
   const props = vm.$options.props;
-  console.log(props);
+  // console.log(props);
   for (const key in methods) {
     if (process.env.NODE_ENV !== "production") {
       if (typeof methods[key] !== "function") {

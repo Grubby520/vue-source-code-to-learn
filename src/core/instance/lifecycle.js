@@ -63,7 +63,7 @@ export function initLifecycle(vm: Component) {
 }
 
 export function lifecycleMixin(Vue: Class<Component>) {
-  // 负责更新页面，是首次渲染、后续更新和patch的入口
+  // VNode渲染成真实DOM，负责更新页面，是首次渲染、也是后续更新和patch的入口
   Vue.prototype._update = function (vnode: VNode, hydrating?: boolean) {
     console.log(vnode);
     const vm: Component = this;
@@ -77,6 +77,12 @@ export function lifecycleMixin(Vue: Class<Component>) {
     // based on the rendering backend used.
     if (!prevVnode) {
       // initial render 首次渲染
+     /**
+      * vm.$el DOM对象
+      * vnode render函数的返回值
+      * hydrating 是否是服务端渲染
+      * removeOnly 是个 transition-group 用的 ?
+      */
       vm.$el = vm.__patch__(vm.$el, vnode, hydrating, false /* removeOnly */);
     } else {
       // updates 响应式数据更新 新旧vnode
@@ -153,6 +159,14 @@ export function lifecycleMixin(Vue: Class<Component>) {
   };
 }
 
+/**
+ * 核心：实例化一个renderWatcher
+ * 并调用 prototype._render 方法生成虚拟DOM
+ * 并最终调用 prototype._update 更新DOM
+ * 
+ * Watcher的作用？
+ * 
+ */
 export function mountComponent(
   vm: Component,
   el: ?Element,
@@ -160,6 +174,7 @@ export function mountComponent(
 ): Component {
   vm.$el = el;
   if (!vm.$options.render) {
+    // 不考虑，正常是进不来的
     vm.$options.render = createEmptyVNode;
     if (process.env.NODE_ENV !== "production") {
       /* istanbul ignore if */
@@ -206,7 +221,7 @@ export function mountComponent(
     };
   } else {
     updateComponent = () => {
-      vm._update(vm._render(), hydrating);
+      vm._update(vm._render(), hydrating); // _render生成VNode, _update渲染成真实的DOM
     };
   }
 
@@ -215,22 +230,23 @@ export function mountComponent(
   // component's mounted hook), which relies on vm._watcher being already defined
   new Watcher(
     vm,
-    updateComponent,
+    updateComponent, // this.getter
     noop,
     {
-      before() {
+      before() { // this.before
         if (vm._isMounted && !vm._isDestroyed) {
           callHook(vm, "beforeUpdate");
         }
       },
     },
-    true /* isRenderWatcher */
+    true /* isRenderWatcher */ // vm._watcher = this
   );
   hydrating = false;
 
   // manually mounted instance, call mounted on self
   // mounted is called for render-created child components in its inserted hook
-  if (vm.$vnode == null) {
+  if (vm.$vnode == null) { // $vnode存的是 parent vnode
+    // 根实例
     vm._isMounted = true;
     callHook(vm, "mounted");
   }
@@ -359,6 +375,7 @@ export function deactivateChildComponent(vm: Component, direct?: boolean) {
   }
 }
 
+// 钩子函数
 export function callHook(vm: Component, hook: string) {
   // #7573 disable dep collection when invoking lifecycle hooks
   pushTarget();

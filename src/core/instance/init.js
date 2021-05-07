@@ -68,7 +68,7 @@ export function initMixin(Vue: Class<Component>) {
       vm._renderProxy = vm;
     }
     // expose real self
-    vm._self = vm;
+    vm._self = vm; // 这tm不会无限循环?
     // 初始化组件实例的关系属性，如 $options, $parent, $root, $children, $refs
     initLifecycle(vm);
     /**
@@ -117,7 +117,8 @@ export function initMixin(Vue: Class<Component>) {
 
     // 如果配置项中有 ’el‘ 属性，程序自动调用 $mount 方法
     if (vm.$options.el) {
-      vm.$mount(vm.$options.el); // compiler
+      // 挂载过程 它与平台、构建方式都有关
+      vm.$mount(vm.$options.el); // compiler template渲染成最终的DOM
     }
     // 否则，手动调用 vm.$mount(el)
   };

@@ -1,6 +1,7 @@
 /* @flow */
-
-import Vue from 'core/index'
+//  main entry
+// debugger
+import Vue from 'core/index' // 真正初始化的地方
 import config from 'core/config'
 import { extend, noop } from 'shared/util'
 import { mountComponent } from 'core/instance/lifecycle'
@@ -31,15 +32,16 @@ extend(Vue.options.directives, platformDirectives)
 extend(Vue.options.components, platformComponents)
 
 // install platform patch function
-Vue.prototype.__patch__ = inBrowser ? patch : noop
+Vue.prototype.__patch__ = inBrowser ? patch : noop // 不需要传参
 
 // public mount method
+// 公共的 $mount 定义的地方
 Vue.prototype.$mount = function (
   el?: string | Element,
   hydrating?: boolean
 ): Component {
   el = el && inBrowser ? query(el) : undefined
-  return mountComponent(this, el, hydrating)
+  return mountComponent(this, el, hydrating) // key point
 }
 
 // devtools global hook

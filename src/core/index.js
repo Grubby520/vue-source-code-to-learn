@@ -1,9 +1,14 @@
-import Vue from './instance/index'
+/** 
+ * main entry start
+ * Vue的起点 - new 之前已经完成所有的初始化方法
+ */
+// debugger
+import Vue from './instance/index' // 来源
 import { initGlobalAPI } from './global-api/index'
 import { isServerRendering } from 'core/util/env'
 import { FunctionalRenderContext } from 'core/vdom/create-functional-component'
 
-initGlobalAPI(Vue)
+initGlobalAPI(Vue) // 初始化Vue本身的全局API
 
 Object.defineProperty(Vue.prototype, '$isServer', {
   get: isServerRendering
