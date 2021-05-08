@@ -19,16 +19,19 @@ import {
 } from "../util/index";
 
 // 全局变量
-export let activeInstance: any = null;
+export let activeInstance: any = null; // 保持当前vue的执行上下文
 export let isUpdatingChildComponent: boolean = false;
 
 // 有点意思：执行-activeInstance为传入的vm，在执行返回的函数，又把activeInstance重置为执行之前的activeInstance
-// ??? 实际场景是怎样
+// ??? 实际场景是怎样 -> prevActiveInstance 与 当前这个 vm 是父子关系，wtf
 export function setActiveInstance(vm: Component) {
   const prevActiveInstance = activeInstance;
   activeInstance = vm;
   return () => {
     // 闭包的应用-暂存了上一次的activeInstance，执行后，activeInstance还是上一次的值，而不是这个vm
+    // !!! 核心 太叼了：patch结束之后调用该函数，activeInstance 恢复之前的父实例，
+    // 这样就完美地保证了 createComponentInstanceForVnode 整个深度遍历过程中，
+    // 我们在实例化子组件的时候能传入当前子组件的父 Vue 实例，并在 _init 的过程中，通过 vm.$parent 把这个父子关系保留
     activeInstance = prevActiveInstance;
   };
 }
@@ -45,11 +48,11 @@ export function initLifecycle(vm: Component) {
       // 向上查找，直到第一个 non-abstract parent
       parent = parent.$parent; // !!! 学习-逆向上递归
     }
-    parent.$children.push(vm); // wtf ???
+    parent.$children.push(vm); // wtf ??? -> 把当前vm存储到父实例的 $children 中
   }
 
-  vm.$parent = parent;
-  vm.$root = parent ? parent.$root : vm; // ?
+  vm.$parent = parent; // $parent 存储的 parent 实例
+  vm.$root = parent ? parent.$root : vm; // 跟实例
 
   vm.$children = [];
   vm.$refs = {};
@@ -65,14 +68,14 @@ export function initLifecycle(vm: Component) {
 export function lifecycleMixin(Vue: Class<Component>) {
   // VNode渲染成真实DOM，负责更新页面，是首次渲染、也是后续更新和patch的入口
   Vue.prototype._update = function (vnode: VNode, hydrating?: boolean) {
-    console.log(vnode);
+    console.log('_update: ', vnode);
     const vm: Component = this;
     // old
     const prevEl = vm.$el;
     const prevVnode = vm._vnode;
     // new
     const restoreActiveInstance = setActiveInstance(vm);
-    vm._vnode = vnode; // 可怕的vnode
+    vm._vnode = vnode; // ? 可怕的vnode, vnode是vm._reder() 返回的，而 vm.$vnode 是 parentVNode, 即为 vm._vnode.parent === vm.$vnode
     // Vue.prototype.__patch__ is injected in entry points
     // based on the rendering backend used.
     if (!prevVnode) {
@@ -197,7 +200,7 @@ export function mountComponent(
       }
     }
   }
-  callHook(vm, "beforeMount");
+  callHook(vm, "beforeMount"); // 已经拿到了vnode
 
   let updateComponent;
   /* istanbul ignore if */
@@ -221,6 +224,8 @@ export function mountComponent(
     };
   } else {
     updateComponent = () => {
+      // question ? -> 什么时候调用的 ?
+      // debugger
       vm._update(vm._render(), hydrating); // _render生成VNode, _update渲染成真实的DOM
     };
   }
@@ -245,10 +250,10 @@ export function mountComponent(
 
   // manually mounted instance, call mounted on self
   // mounted is called for render-created child components in its inserted hook
-  if (vm.$vnode == null) { // $vnode存的是 parent vnode
+  if (vm.$vnode == null) { // $vnode存的是 parentVNode
     // 根实例
     vm._isMounted = true;
-    callHook(vm, "mounted");
+    callHook(vm, "mounted"); // 仅初始化执行一次
   }
   return vm;
 }

@@ -22,6 +22,11 @@ import {
  * Option overwriting strategies are functions that handle
  * how to merge a parent option value and a child option
  * value into the final value.
+ * 这定义的父子合并的策略
+ * {data, watch, props, methods, inject, computed, ...[LIFECYCLE_HOOKS], ...[ASSET_TYPES]}
+ * 自定义的3个方法，处理object  hashes
+ * 钩子函数使用 mergeHook
+ * mergeAssets
  */
 const strats = config.optionMergeStrategies;
 
@@ -135,18 +140,25 @@ strats.data = function (
 };
 
 /**
- * Hooks and props are merged as arrays.
+ * Hooks and props are merged as arrays. 
  */
 function mergeHook(
   parentVal: ?Array<Function>,
   childVal: ?Function | ?Array<Function>
 ): ?Array<Function> {
+  /**
+   * 用了一个多层 3 元运算符，
+   * 逻辑就是如果不存在 childVal ，就返回 parentVal；
+   * 否则再判断是否存在 parentVal，如果存在,就把 childVal 添加到 parentVal 后返回新数组；
+   * 否则返回 childVal 的数组。
+   * 所以回到 mergeOptions 函数，一旦 parent 和 child 都定义了相同的钩子函数，那么它们会把 2 个钩子函数 concat 到一个数组里
+   */
   const res = childVal
     ? parentVal
       ? parentVal.concat(childVal)
-      : Array.isArray(childVal)
-      ? childVal
-      : [childVal]
+      : Array.isArray(childVal) 
+        ? childVal
+        : [childVal]
     : parentVal;
   return res ? dedupeHooks(res) : res;
 }
@@ -377,13 +389,18 @@ function assertObjectType(name: string, value: any, vm: ?Component) {
 /**
  * Merge two option objects into a new one.
  * Core utility used in both instantiation and inheritance.
- * 优先级 child > parent
+ * 合并策略：优先级 child > parent
+ * 比较核心的几步，先递归把 extends 和 mixins 合并到 parent 上，
+ * 然后遍历 parent，调用 mergeField，然后再遍历 child，如果 key 不在 parent 的自身属性上，则调用 mergeField
  */
 export function mergeOptions(
   parent: Object,
   child: Object,
   vm?: Component
 ): Object {
+
+  console.log('mergeOptions: ', arguments)
+
   if (process.env.NODE_ENV !== "production") {
     checkComponents(child);
   }
@@ -391,7 +408,7 @@ export function mergeOptions(
   if (typeof child === "function") {
     child = child.options;
   }
-  // 标准化 props、inject、directive 选项，方便后续程序的处理
+  // 标准化 child 的 props、inject、directive 选项，方便后续程序的处理
   normalizeProps(child, vm);
   normalizeInject(child, vm);
   normalizeDirectives(child);

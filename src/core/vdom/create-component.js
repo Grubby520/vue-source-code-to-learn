@@ -33,7 +33,9 @@ import {
 } from 'weex/runtime/recycle-list/render-component-template'
 
 // inline hooks to be invoked on component VNodes during patch
+// 组件 VNodes patch阶段时调用内部hooks
 const componentVNodeHooks = {
+  // 组件初始化入口
   init (vnode: VNodeWithData, hydrating: boolean): ?boolean {
     if (
       vnode.componentInstance &&
@@ -44,12 +46,13 @@ const componentVNodeHooks = {
       const mountedNode: any = vnode // work around flow
       componentVNodeHooks.prepatch(mountedNode, mountedNode)
     } else {
+      // js是单线程，全局的activeInstance，整个初始化是一个深度遍历的过程。
       const child = vnode.componentInstance = createComponentInstanceForVnode(
         vnode,
         activeInstance
       )
-      child.$mount(hydrating ? vnode.elm : undefined, hydrating)
-    }
+      child.$mount(hydrating ? vnode.elm : undefined, hydrating) // mountComponent -> updateComponent => vm._update(vm._render(), hydrating)
+    } 
   },
 
   prepatch (oldVnode: MountedComponentVNode, vnode: MountedComponentVNode) {
@@ -64,6 +67,7 @@ const componentVNodeHooks = {
     )
   },
 
+  // 每个子组件在这个函数中执行 mounted 钩子函数
   insert (vnode: MountedComponentVNode) {
     const { context, componentInstance } = vnode
     if (!componentInstance._isMounted) {
@@ -86,7 +90,7 @@ const componentVNodeHooks = {
 
   destroy (vnode: MountedComponentVNode) {
     const { componentInstance } = vnode
-    if (!componentInstance._isDestroyed) {
+    if (!componentInstance._isDestroyed) { // ? 用户骚操作-你不知道会不会一直不停的调destroy, 做了很多这样的优化逻辑判断 ?
       if (!vnode.data.keepAlive) {
         componentInstance.$destroy()
       } else {
@@ -105,7 +109,12 @@ const hooksToMerge = Object.keys(componentVNodeHooks)
  * @param {*} context 
  * @param {*} children 
  * @param {*} tag 
- * @returns 
+ * @returns component vnode
+ * 
+ * 1、构造子类构造函数 Ctor
+ * 2、注册组件钩子函数 installComponentHooks
+ * 3、实例化组件vnode new VNode()
+ * continue 后续_update(),进而执行 patch 函数
  */
 export function createComponent (
   Ctor: Class<Component> | Function | Object | void,
@@ -114,15 +123,19 @@ export function createComponent (
   children: ?Array<VNode>,
   tag?: string
 ): VNode | Array<VNode> | void {
+
+  console.log(arguments)
+
   if (isUndef(Ctor)) {
     return
   }
 
-  const baseCtor = context.$options._base
+  const baseCtor = context.$options._base // 构造函数Vue本身
 
   // plain options object: turn it into a constructor
+  // step 1
   if (isObject(Ctor)) {
-    Ctor = baseCtor.extend(Ctor)
+    Ctor = baseCtor.extend(Ctor) // Object类型 .extend做了什么 ‘global-api/extend.js’
   }
 
   // if at this stage it's not a constructor or an async component factory,
@@ -143,6 +156,7 @@ export function createComponent (
       // return a placeholder node for async component, which is rendered
       // as a comment node but preserves all the raw information for the node.
       // the information will be used for async server-rendering and hydration.
+      // 创建一个父节点占位符
       return createAsyncPlaceholder(
         asyncFactory,
         data,
@@ -192,10 +206,13 @@ export function createComponent (
   }
 
   // install component management hooks onto the placeholder node
+  // step 2 安装组件钩子函数 - 参考了开源库 snabbdom 特点之一就是在VNode的patch流程中对外暴露了各种时机的钩子函数
   installComponentHooks(data)
 
   // return a placeholder vnode
+  // step 3 实例化 VNode
   const name = Ctor.options.name || tag
+  // 关键点 - 组件的VNode是没有 children,  text, elm
   const vnode = new VNode(
     `vue-component-${Ctor.cid}${name ? `-${name}` : ''}`,
     data, undefined, undefined, undefined, context,
@@ -218,7 +235,7 @@ export function createComponentInstanceForVnode (
   // we know it's MountedComponentVNode but flow doesn't
   vnode: any,
   // activeInstance in lifecycle state
-  parent: any
+  parent: any // 当前激活状态下的组件实例(? 是如何拿到组件实例 ?)
 ): Component {
   const options: InternalComponentOptions = {
     _isComponent: true,
@@ -231,17 +248,19 @@ export function createComponentInstanceForVnode (
     options.render = inlineTemplate.render
     options.staticRenderFns = inlineTemplate.staticRenderFns
   }
-  return new vnode.componentOptions.Ctor(options)
+  return new vnode.componentOptions.Ctor(options) // Sub - VueComponent 构造器,然后走_init()
 }
 
+// 把 componentVNodeHooks 钩子函数合并到 data.hook
 function installComponentHooks (data: VNodeData) {
   const hooks = data.hook || (data.hook = {})
+  console.log(data)
   for (let i = 0; i < hooksToMerge.length; i++) {
     const key = hooksToMerge[i]
-    const existing = hooks[key]
+    const existing = hooks[key] // 变量命名可以在开发中参考一盘
     const toMerge = componentVNodeHooks[key]
     if (existing !== toMerge && !(existing && existing._merged)) {
-      hooks[key] = existing ? mergeHook(toMerge, existing) : toMerge
+      hooks[key] = existing ? mergeHook(toMerge, existing) : toMerge // 合并策略
     }
   }
 }

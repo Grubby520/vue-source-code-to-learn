@@ -32,7 +32,7 @@ extend(Vue.options.directives, platformDirectives)
 extend(Vue.options.components, platformComponents)
 
 // install platform patch function
-Vue.prototype.__patch__ = inBrowser ? patch : noop // 不需要传参
+Vue.prototype.__patch__ = inBrowser ? patch : noop // 不需要传参 
 
 // public mount method
 // 公共的 $mount 定义的地方

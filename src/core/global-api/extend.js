@@ -15,9 +15,12 @@ export function initExtend(Vue: GlobalAPI) {
   let cid = 1;
 
   /**
-   * Class inheritance 类继承
+   * Class inheritance 类继承 构造一个Vue的子类
+   * .vue定义的Component 实际文件是 export default {...} 一个普通的Object对象
+   * 原型继承：纯对象转换成继承Vue的Sub构造器函数，然后对Sub本身扩展了一些属性
    */
   Vue.extend = function (extendOptions: Object): Function {
+    console.log(extendOptions)
     extendOptions = extendOptions || {};
     const Super = this;
     const SuperId = Super.cid;
@@ -28,12 +31,13 @@ export function initExtend(Vue: GlobalAPI) {
 
     const name = extendOptions.name || Super.options.name;
     if (process.env.NODE_ENV !== "production" && name) {
-      validateComponentName(name);
+      validateComponentName(name); // 自定义的组件名：正则验证规则 + 不要与html或内置的元素同名
     }
 
-    const Sub = function VueComponent(options) {
-      this._init(options);
+    const Sub = function VueComponent(options) { // 构造函数
+      this._init(options); // 这不就是root上 new Vue() 初始化的逻辑，这里实例化子组件（说明每个子组件也是一个独立的vue实例，与vue3有本质区别）
     };
+    console.log(Sub)
     // 原型继承的方式
     Sub.prototype = Object.create(Super.prototype);
     Sub.prototype.constructor = Sub;
@@ -48,10 +52,11 @@ export function initExtend(Vue: GlobalAPI) {
       initProps(Sub); // 初始化props，将props proxy到Sub.prototype._props，测试使用this._props能不能访问
     }
     if (Sub.options.computed) {
-      initComputed(Sub); // 初始化计算属性，挂到Sub.prototype上
+      initComputed(Sub); // 初始化computed，挂到Sub.prototype上
     }
 
     // allow further extension/mixin/plugin usage
+    // 全局API
     Sub.extend = Super.extend;
     Sub.mixin = Super.mixin;
     Sub.use = Super.use;
@@ -59,7 +64,7 @@ export function initExtend(Vue: GlobalAPI) {
     // create asset registers, so extended classes
     // can have their private assets too.
     ASSET_TYPES.forEach(function (type) {
-      Sub[type] = Super[type];
+      Sub[type] = Super[type]; // 继承的子类拥有自己私有的资产-component, directive, filter
     });
     // enable recursive self-lookup 可以递归查找
     if (name) {
@@ -70,10 +75,10 @@ export function initExtend(Vue: GlobalAPI) {
     // later at instantiation we can check if Super's options have
     // been updated. 稍后实例化时，我们可以取检查基类实例的选项是否更新
     Sub.superOptions = Super.options; // 保持Super的选项引用
-    Sub.extendOptions = extendOptions; // 存的额外的配置
-    Sub.sealedOptions = extend({}, Sub.options); // 拷贝Super选项的副本
+    Sub.extendOptions = extendOptions; // .vue的object对象
+    Sub.sealedOptions = extend({}, Sub.options); // 密封一份options副本
 
-    // cache constructor
+    // cache constructor 缓存，避免多次执行对同一个子组件重复构造
     cachedCtors[SuperId] = Sub;
     return Sub;
   };

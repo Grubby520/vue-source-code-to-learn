@@ -1233,6 +1233,11 @@
    * Option overwriting strategies are functions that handle
    * how to merge a parent option value and a child option
    * value into the final value.
+   * 这定义的父子合并的策略
+   * {data, watch, props, methods, inject, computed, ...[LIFECYCLE_HOOKS], ...[ASSET_TYPES]}
+   * 自定义的3个方法，处理object  hashes
+   * 钩子函数使用 mergeHook
+   * mergeAssets
    */
   var strats = config.optionMergeStrategies;
 
@@ -1346,18 +1351,25 @@
   };
 
   /**
-   * Hooks and props are merged as arrays.
+   * Hooks and props are merged as arrays. 
    */
   function mergeHook(
     parentVal,
     childVal
   ) {
+    /**
+     * 用了一个多层 3 元运算符，
+     * 逻辑就是如果不存在 childVal ，就返回 parentVal；
+     * 否则再判断是否存在 parentVal，如果存在,就把 childVal 添加到 parentVal 后返回新数组；
+     * 否则返回 childVal 的数组。
+     * 所以回到 mergeOptions 函数，一旦 parent 和 child 都定义了相同的钩子函数，那么它们会把 2 个钩子函数 concat 到一个数组里
+     */
     var res = childVal
       ? parentVal
         ? parentVal.concat(childVal)
-        : Array.isArray(childVal)
-        ? childVal
-        : [childVal]
+        : Array.isArray(childVal) 
+          ? childVal
+          : [childVal]
       : parentVal;
     return res ? dedupeHooks(res) : res;
   }
@@ -1588,13 +1600,18 @@
   /**
    * Merge two option objects into a new one.
    * Core utility used in both instantiation and inheritance.
-   * 优先级 child > parent
+   * 合并策略：优先级 child > parent
+   * 比较核心的几步，先递归把 extends 和 mixins 合并到 parent 上，
+   * 然后遍历 parent，调用 mergeField，然后再遍历 child，如果 key 不在 parent 的自身属性上，则调用 mergeField
    */
   function mergeOptions(
     parent,
     child,
     vm
   ) {
+
+    console.log('mergeOptions: ', arguments);
+
     {
       checkComponents(child);
     }
@@ -1602,7 +1619,7 @@
     if (typeof child === "function") {
       child = child.options;
     }
-    // 标准化 props、inject、directive 选项，方便后续程序的处理
+    // 标准化 child 的 props、inject、directive 选项，方便后续程序的处理
     normalizeProps(child, vm);
     normalizeInject(child, vm);
     normalizeDirectives(child);
@@ -3248,7 +3265,9 @@
   /*  */
 
   // inline hooks to be invoked on component VNodes during patch
+  // 组件 VNodes patch阶段时调用内部hooks
   var componentVNodeHooks = {
+    // 组件初始化入口
     init: function init (vnode, hydrating) {
       if (
         vnode.componentInstance &&
@@ -3259,12 +3278,13 @@
         var mountedNode = vnode; // work around flow
         componentVNodeHooks.prepatch(mountedNode, mountedNode);
       } else {
+        // js是单线程，全局的activeInstance，整个初始化是一个深度遍历的过程。
         var child = vnode.componentInstance = createComponentInstanceForVnode(
           vnode,
           activeInstance
         );
-        child.$mount(hydrating ? vnode.elm : undefined, hydrating);
-      }
+        child.$mount(hydrating ? vnode.elm : undefined, hydrating); // mountComponent -> updateComponent => vm._update(vm._render(), hydrating)
+      } 
     },
 
     prepatch: function prepatch (oldVnode, vnode) {
@@ -3279,6 +3299,7 @@
       );
     },
 
+    // 每个子组件在这个函数中执行 mounted 钩子函数
     insert: function insert (vnode) {
       var context = vnode.context;
       var componentInstance = vnode.componentInstance;
@@ -3302,7 +3323,7 @@
 
     destroy: function destroy (vnode) {
       var componentInstance = vnode.componentInstance;
-      if (!componentInstance._isDestroyed) {
+      if (!componentInstance._isDestroyed) { // ? 用户骚操作-你不知道会不会一直不停的调destroy, 做了很多这样的优化逻辑判断 ?
         if (!vnode.data.keepAlive) {
           componentInstance.$destroy();
         } else {
@@ -3321,7 +3342,12 @@
    * @param {*} context 
    * @param {*} children 
    * @param {*} tag 
-   * @returns 
+   * @returns component vnode
+   * 
+   * 1、构造子类构造函数 Ctor
+   * 2、注册组件钩子函数 installComponentHooks
+   * 3、实例化组件vnode new VNode()
+   * continue 后续_update(),进而执行 patch 函数
    */
   function createComponent (
     Ctor,
@@ -3330,15 +3356,19 @@
     children,
     tag
   ) {
+
+    console.log(arguments);
+
     if (isUndef(Ctor)) {
       return
     }
 
-    var baseCtor = context.$options._base;
+    var baseCtor = context.$options._base; // 构造函数Vue本身
 
     // plain options object: turn it into a constructor
+    // step 1
     if (isObject(Ctor)) {
-      Ctor = baseCtor.extend(Ctor);
+      Ctor = baseCtor.extend(Ctor); // Object类型 .extend做了什么 ‘global-api/extend.js’
     }
 
     // if at this stage it's not a constructor or an async component factory,
@@ -3359,6 +3389,7 @@
         // return a placeholder node for async component, which is rendered
         // as a comment node but preserves all the raw information for the node.
         // the information will be used for async server-rendering and hydration.
+        // 创建一个父节点占位符
         return createAsyncPlaceholder(
           asyncFactory,
           data,
@@ -3408,10 +3439,13 @@
     }
 
     // install component management hooks onto the placeholder node
+    // step 2 安装组件钩子函数 - 参考了开源库 snabbdom 特点之一就是在VNode的patch流程中对外暴露了各种时机的钩子函数
     installComponentHooks(data);
 
     // return a placeholder vnode
+    // step 3 实例化 VNode
     var name = Ctor.options.name || tag;
+    // 关键点 - 组件的VNode是没有 children,  text, elm
     var vnode = new VNode(
       ("vue-component-" + (Ctor.cid) + (name ? ("-" + name) : '')),
       data, undefined, undefined, undefined, context,
@@ -3426,7 +3460,7 @@
     // we know it's MountedComponentVNode but flow doesn't
     vnode,
     // activeInstance in lifecycle state
-    parent
+    parent // 当前激活状态下的组件实例(? 是如何拿到组件实例 ?)
   ) {
     var options = {
       _isComponent: true,
@@ -3439,17 +3473,19 @@
       options.render = inlineTemplate.render;
       options.staticRenderFns = inlineTemplate.staticRenderFns;
     }
-    return new vnode.componentOptions.Ctor(options)
+    return new vnode.componentOptions.Ctor(options) // Sub - VueComponent 构造器,然后走_init()
   }
 
+  // 把 componentVNodeHooks 钩子函数合并到 data.hook
   function installComponentHooks (data) {
     var hooks = data.hook || (data.hook = {});
+    console.log(data);
     for (var i = 0; i < hooksToMerge.length; i++) {
       var key = hooksToMerge[i];
-      var existing = hooks[key];
+      var existing = hooks[key]; // 变量命名可以在开发中参考一盘
       var toMerge = componentVNodeHooks[key];
       if (existing !== toMerge && !(existing && existing._merged)) {
-        hooks[key] = existing ? mergeHook$1(toMerge, existing) : toMerge;
+        hooks[key] = existing ? mergeHook$1(toMerge, existing) : toMerge; // 合并策略
       }
     }
   }
@@ -3737,11 +3773,13 @@
         // separately from one another. Nested component's render fns are called
         // when parent component is patched.
         currentRenderingInstance = vm;
+        // question ?
+        // debugger
         vnode = render.call(vm._renderProxy, vm.$createElement); // vm.$options.render 返回vnode
-  //       function anonymous(
-  // ) {
-  // with(this){return _c('div',{attrs:{"id":"app"}},[_c('p',{attrs:{"id":"p"}},[_v(_s(msg))]),_v(" "),_c('button',{attrs:{"id":"btn"},on:{"click":handleClick}},[_v("Click Me")]),_v(" "),_c('p',[_v(_s(obj))])])}
-  // }
+        //       function anonymous(
+        // ) {
+        // with(this){return _c('div',{attrs:{"id":"app"}},[_c('p',{attrs:{"id":"p"}},[_v(_s(msg))]),_v(" "),_c('button',{attrs:{"id":"btn"},on:{"click":handleClick}},[_v("Click Me")]),_v(" "),_c('p',[_v(_s(obj))])])}
+        // }
       } catch (e) {
         handleError(e, vm, "render");
         // return error render result,
@@ -4122,16 +4160,19 @@
   /*  */
 
   // 全局变量
-  var activeInstance = null;
+  var activeInstance = null; // 保持当前vue的执行上下文
   var isUpdatingChildComponent = false;
 
   // 有点意思：执行-activeInstance为传入的vm，在执行返回的函数，又把activeInstance重置为执行之前的activeInstance
-  // ??? 实际场景是怎样
+  // ??? 实际场景是怎样 -> prevActiveInstance 与 当前这个 vm 是父子关系，wtf
   function setActiveInstance(vm) {
     var prevActiveInstance = activeInstance;
     activeInstance = vm;
     return function () {
       // 闭包的应用-暂存了上一次的activeInstance，执行后，activeInstance还是上一次的值，而不是这个vm
+      // !!! 核心 太叼了：patch结束之后调用该函数，activeInstance 恢复之前的父实例，
+      // 这样就完美地保证了 createComponentInstanceForVnode 整个深度遍历过程中，
+      // 我们在实例化子组件的时候能传入当前子组件的父 Vue 实例，并在 _init 的过程中，通过 vm.$parent 把这个父子关系保留
       activeInstance = prevActiveInstance;
     };
   }
@@ -4148,11 +4189,11 @@
         // 向上查找，直到第一个 non-abstract parent
         parent = parent.$parent; // !!! 学习-逆向上递归
       }
-      parent.$children.push(vm); // wtf ???
+      parent.$children.push(vm); // wtf ??? -> 把当前vm存储到父实例的 $children 中
     }
 
-    vm.$parent = parent;
-    vm.$root = parent ? parent.$root : vm; // ?
+    vm.$parent = parent; // $parent 存储的 parent 实例
+    vm.$root = parent ? parent.$root : vm; // 跟实例
 
     vm.$children = [];
     vm.$refs = {};
@@ -4168,14 +4209,14 @@
   function lifecycleMixin(Vue) {
     // VNode渲染成真实DOM，负责更新页面，是首次渲染、也是后续更新和patch的入口
     Vue.prototype._update = function (vnode, hydrating) {
-      console.log(vnode);
+      console.log('_update: ', vnode);
       var vm = this;
       // old
       var prevEl = vm.$el;
       var prevVnode = vm._vnode;
       // new
       var restoreActiveInstance = setActiveInstance(vm);
-      vm._vnode = vnode; // 可怕的vnode
+      vm._vnode = vnode; // ? 可怕的vnode, vnode是vm._reder() 返回的，而 vm.$vnode 是 parentVNode, 即为 vm._vnode.parent === vm.$vnode
       // Vue.prototype.__patch__ is injected in entry points
       // based on the rendering backend used.
       if (!prevVnode) {
@@ -4300,7 +4341,7 @@
         }
       }
     }
-    callHook(vm, "beforeMount");
+    callHook(vm, "beforeMount"); // 已经拿到了vnode
 
     var updateComponent;
     /* istanbul ignore if */
@@ -4324,6 +4365,8 @@
       };
     } else {
       updateComponent = function () {
+        // question ? -> 什么时候调用的 ?
+        // debugger
         vm._update(vm._render(), hydrating); // _render生成VNode, _update渲染成真实的DOM
       };
     }
@@ -4348,10 +4391,10 @@
 
     // manually mounted instance, call mounted on self
     // mounted is called for render-created child components in its inserted hook
-    if (vm.$vnode == null) { // $vnode存的是 parent vnode
+    if (vm.$vnode == null) { // $vnode存的是 parentVNode
       // 根实例
       vm._isMounted = true;
-      callHook(vm, "mounted");
+      callHook(vm, "mounted"); // 仅初始化执行一次
     }
     return vm;
   }
@@ -4630,7 +4673,7 @@
       var watcher = queue[i];
       var vm = watcher.vm;
       if (vm._watcher === watcher && vm._isMounted && !vm._isDestroyed) {
-        callHook(vm, "updated");
+        callHook(vm, "updated"); // 刷新队列 flushSchedulerQueue 时，调用它
       }
     }
   }
@@ -5360,6 +5403,7 @@
   var uid$2 = 0;
 
   function initMixin(Vue) {
+    // 五星
     Vue.prototype._init = function (options) {
       var vm = this;
       // a uid
@@ -5382,7 +5426,7 @@
         // since dynamic options merging is pretty slow, and none of the
         // internal component options needs special treatment.
         /**
-         * 每个子组件初始化时走这里，这里只做了一些性能优化
+         * 每个Component类型的子组件初始化时走这里，这里只做了一些性能优化
          * 将组件配置对象上的一些深层次属性放到 vm.$options 选项中，以提高代码的执行效率
          */
         initInternalComponent(vm, options);
@@ -5398,6 +5442,7 @@
           options || {},
           vm
         );
+        console.log('vm.$options: ', vm.$options);
         /**
          * components: {}
             data: ƒ mergedInstanceDataFn()
@@ -5451,7 +5496,7 @@
       // 解析配置项中的 provide 属性，挂载到 vm._provided 属性上面
       initProvide(vm); // resolve provide after data/props
       // 调用 'created' lifecycle hook
-      callHook(vm, "created");
+      callHook(vm, "created"); // 可以访问 props, data, computed, methods, watch
 
       /* istanbul ignore if */
       if ( config.performance && mark) {
@@ -5465,15 +5510,18 @@
         // 挂载过程 它与平台、构建方式都有关
         vm.$mount(vm.$options.el); // compiler template渲染成最终的DOM
       }
-      // 否则，手动调用 vm.$mount(el)
+      // 否则，手动调用 vm.$mount(el)，e.g. Component初始化时没有el的。因此它是自己接管了 $mount 的过程
     };
   }
 
+  // 初始化子组件, 对options进行合并，将结果保留在 $options 中
   function initInternalComponent(
     vm,
     options
   ) {
-    var opts = (vm.$options = Object.create(vm.constructor.options));
+    console.log('initInternalComponent: ', vm, options);
+    // 合并$options, 同时添加了一堆_xx属性
+    var opts = (vm.$options = Object.create(vm.constructor.options)); // vm.constructor 就是 Sub
     // doing this because it's faster than dynamic enumeration.
     var parentVnode = options._parentVnode;
     opts.parent = options.parent;
@@ -5489,9 +5537,47 @@
       opts.render = options.render;
       opts.staticRenderFns = options.staticRenderFns;
     }
+    console.log(vm.$options);
+    /**
+     * 处理完成之后，vm.$options 大致如下
+     */
+    // vm.$options = {
+    //   parent: Vue /*父Vue实例*/,
+    //   propsData: undefined,
+    //   _componentTag: undefined,
+    //   _parentVnode: VNode /*父VNode实例*/,
+    //   _renderChildren:undefined,
+    //   __proto__: {
+    //     components: { },
+    //     directives: { },
+    //     filters: { },
+    //     _base: function Vue(options) {
+    //         //...
+    //     },
+    //     _Ctor: {},
+    //     created: [
+    //       function created() {
+    //         console.log('parent created')
+    //       }, function created() {
+    //         console.log('child created')
+    //       }
+    //     ],
+    //     mounted: [
+    //       function mounted() {
+    //         console.log('child mounted')
+    //       }
+    //     ],
+    //     data() {
+    //       return {
+    //         msg: 'Hello Vue'
+    //       }
+    //     },
+    //     template: '<div>{{msg}}</div>'
+    //   }
+    // }
   }
 
-  // 从组件<构造函数>中解析配置对象 options，并合并基类选项
+  // 从组件<构造函数 - a plain object 才对>中解析配置对象 options，并合并基类选项
   function resolveConstructorOptions(Ctor) {
     var options = Ctor.options;
     if (Ctor.super) {
@@ -5645,9 +5731,12 @@
     var cid = 1;
 
     /**
-     * Class inheritance 类继承
+     * Class inheritance 类继承 构造一个Vue的子类
+     * .vue定义的Component 实际文件是 export default {...} 一个普通的Object对象
+     * 原型继承：纯对象转换成继承Vue的Sub构造器函数，然后对Sub本身扩展了一些属性
      */
     Vue.extend = function (extendOptions) {
+      console.log(extendOptions);
       extendOptions = extendOptions || {};
       var Super = this;
       var SuperId = Super.cid;
@@ -5658,12 +5747,13 @@
 
       var name = extendOptions.name || Super.options.name;
       if ( name) {
-        validateComponentName(name);
+        validateComponentName(name); // 自定义的组件名：正则验证规则 + 不要与html或内置的元素同名
       }
 
-      var Sub = function VueComponent(options) {
-        this._init(options);
+      var Sub = function VueComponent(options) { // 构造函数
+        this._init(options); // 这不就是root上 new Vue() 初始化的逻辑，这里实例化子组件（说明每个子组件也是一个独立的vue实例，与vue3有本质区别）
       };
+      console.log(Sub);
       // 原型继承的方式
       Sub.prototype = Object.create(Super.prototype);
       Sub.prototype.constructor = Sub;
@@ -5678,10 +5768,11 @@
         initProps$1(Sub); // 初始化props，将props proxy到Sub.prototype._props，测试使用this._props能不能访问
       }
       if (Sub.options.computed) {
-        initComputed$1(Sub); // 初始化计算属性，挂到Sub.prototype上
+        initComputed$1(Sub); // 初始化computed，挂到Sub.prototype上
       }
 
       // allow further extension/mixin/plugin usage
+      // 全局API
       Sub.extend = Super.extend;
       Sub.mixin = Super.mixin;
       Sub.use = Super.use;
@@ -5689,7 +5780,7 @@
       // create asset registers, so extended classes
       // can have their private assets too.
       ASSET_TYPES.forEach(function (type) {
-        Sub[type] = Super[type];
+        Sub[type] = Super[type]; // 继承的子类拥有自己私有的资产-component, directive, filter
       });
       // enable recursive self-lookup 可以递归查找
       if (name) {
@@ -5700,10 +5791,10 @@
       // later at instantiation we can check if Super's options have
       // been updated. 稍后实例化时，我们可以取检查基类实例的选项是否更新
       Sub.superOptions = Super.options; // 保持Super的选项引用
-      Sub.extendOptions = extendOptions; // 存的额外的配置
-      Sub.sealedOptions = extend({}, Sub.options); // 拷贝Super选项的副本
+      Sub.extendOptions = extendOptions; // .vue的object对象
+      Sub.sealedOptions = extend({}, Sub.options); // 密封一份options副本
 
-      // cache constructor
+      // cache constructor 缓存，避免多次执行对同一个子组件重复构造
       cachedCtors[SuperId] = Sub;
       return Sub;
     };
@@ -5896,6 +5987,7 @@
 
   /*  */
 
+  // 初始化Vue本身的全局API
   function initGlobalAPI(Vue) {
     // config
     var configDef = {};
@@ -5939,9 +6031,9 @@
 
     // this is used to identify the "base" constructor to extend all plain-object
     // components with in Weex's multi-instance scenarios.
-    Vue.options._base = Vue;
+    Vue.options._base = Vue; // 实例化子组件的时候用它
 
-    extend(Vue.options.components, builtInComponents); // keep-alive
+    extend(Vue.options.components, builtInComponents); // 内置组件 目前有 keep-alive、transition 和 transition-group
 
     initUse(Vue); // .use 安装插件 { install } 
     initMixin$1(Vue); // .mixin
@@ -6430,7 +6522,20 @@
 
     var creatingElmInVPre = 0;
 
-    // 核心-通过虚拟节点创建真实的DOM并插入到其父节点种
+    /**
+     * 核心-通过虚拟节点创建真实的DOM并插入到其父节点种
+     * @param {*} vnode _render() 获取的渲染的 vnode
+     * @param {*} insertedVnodeQueue 
+     * @param {*} parentElm 
+     * @param {*} refElm 
+     * @param {*} nested 
+     * @param {*} ownerArray 
+     * @param {*} index 
+     * @returns 
+     * 
+     * 1、普通vnode节点和组件的vnode节点转转换成真正的DOM上有什么不一样的地方？
+     */
+
     function createElm (
       vnode,
       insertedVnodeQueue,
@@ -6503,7 +6608,9 @@
       }
     }
 
+    // 创建组件
     function createComponent (vnode, insertedVnodeQueue, parentElm, refElm) {
+      console.log('createComponent: ', vnode);
       var i = vnode.data;
       if (isDef(i)) {
         var isReactivated = isDef(vnode.componentInstance) && i.keepAlive;
@@ -6515,8 +6622,8 @@
         // component also has set the placeholder vnode's elm.
         // in that case we can just return the element and be done.
         if (isDef(vnode.componentInstance)) {
-          initComponent(vnode, insertedVnodeQueue);
-          insert(parentElm, vnode.elm, refElm);
+          initComponent(vnode, insertedVnodeQueue); // step 1
+          insert(parentElm, vnode.elm, refElm); // step 2 插入到父节点dom中
           if (isTrue(isReactivated)) {
             reactivateComponent(vnode, insertedVnodeQueue, parentElm, refElm);
           }
@@ -6870,14 +6977,16 @@
       }
     }
 
+    // VNode patch 到 DOM 之后，会执行它，依次执行 insertedVnodeQueue 保存的钩子函数
     function invokeInsertHook (vnode, queue, initial) {
+      console.log('queue: ', queue);
       // delay insert hooks for component root nodes, invoke them after the
       // element is really inserted
       if (isTrue(initial) && isDef(vnode.parent)) {
-        vnode.parent.data.pendingInsert = queue;
+        vnode.parent.data.pendingInsert = queue; // 'pendingInsert'
       } else {
         for (var i = 0; i < queue.length; ++i) {
-          queue[i].data.hook.insert(queue[i]);
+          queue[i].data.hook.insert(queue[i]); // 'insert' 'vdom/create-component.js'
         }
       }
     }
@@ -7011,7 +7120,7 @@
       }
 
       var isInitialPatch = false;
-      var insertedVnodeQueue = [];
+      var insertedVnodeQueue = []; // 先子后父
 
       if (isUndef(oldVnode)) {
         // empty mount (likely as component), create new root element
@@ -7104,7 +7213,7 @@
         }
       }
 
-      invokeInsertHook(vnode, insertedVnodeQueue, isInitialPatch);
+      invokeInsertHook(vnode, insertedVnodeQueue, isInitialPatch); // patch完成之后，执行的函数
       return vnode.elm
     }
   }
@@ -7215,7 +7324,9 @@
     return dir.rawName || ((dir.name) + "." + (Object.keys(dir.modifiers || {}).join('.')))
   }
 
+  // 最终执行生命周期钩子函数
   function callHook$1 (dir, hook, vnode, oldVnode, isDestroy) {
+    console.log('dir: ', dir);
     var fn = dir.def && dir.def[hook];
     if (fn) {
       try {
@@ -9594,7 +9705,7 @@
   extend(Vue.options.components, platformComponents);
 
   // install platform patch function
-  Vue.prototype.__patch__ = inBrowser ? patch : noop; // 不需要传参
+  Vue.prototype.__patch__ = inBrowser ? patch : noop; // 不需要传参 
 
   // public mount method
   // 公共的 $mount 定义的地方

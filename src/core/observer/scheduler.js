@@ -139,7 +139,7 @@ function callUpdatedHooks(queue) {
     const watcher = queue[i];
     const vm = watcher.vm;
     if (vm._watcher === watcher && vm._isMounted && !vm._isDestroyed) {
-      callHook(vm, "updated");
+      callHook(vm, "updated"); // 刷新队列 flushSchedulerQueue 时，调用它
     }
   }
 }

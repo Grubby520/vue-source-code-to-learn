@@ -108,7 +108,9 @@ function getRawDirName (dir: VNodeDirective): string {
   return dir.rawName || `${dir.name}.${Object.keys(dir.modifiers || {}).join('.')}`
 }
 
+// 最终执行生命周期钩子函数
 function callHook (dir, hook, vnode, oldVnode, isDestroy) {
+  console.log('dir: ', dir)
   const fn = dir.def && dir.def[hook]
   if (fn) {
     try {

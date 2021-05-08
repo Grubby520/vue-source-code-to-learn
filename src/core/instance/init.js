@@ -13,6 +13,7 @@ import { extend, mergeOptions, formatComponentName } from "../util/index";
 let uid = 0;
 
 export function initMixin(Vue: Class<Component>) {
+  // 五星
   Vue.prototype._init = function (options?: Object) {
     const vm: Component = this;
     // a uid
@@ -35,7 +36,7 @@ export function initMixin(Vue: Class<Component>) {
       // since dynamic options merging is pretty slow, and none of the
       // internal component options needs special treatment.
       /**
-       * 每个子组件初始化时走这里，这里只做了一些性能优化
+       * 每个Component类型的子组件初始化时走这里，这里只做了一些性能优化
        * 将组件配置对象上的一些深层次属性放到 vm.$options 选项中，以提高代码的执行效率
        */
       initInternalComponent(vm, options);
@@ -51,6 +52,7 @@ export function initMixin(Vue: Class<Component>) {
         options || {},
         vm
       );
+      console.log('vm.$options: ', vm.$options)
       /**
        * components: {}
           data: ƒ mergedInstanceDataFn()
@@ -106,7 +108,7 @@ export function initMixin(Vue: Class<Component>) {
     // 解析配置项中的 provide 属性，挂载到 vm._provided 属性上面
     initProvide(vm); // resolve provide after data/props
     // 调用 'created' lifecycle hook
-    callHook(vm, "created");
+    callHook(vm, "created"); // 可以访问 props, data, computed, methods, watch
 
     /* istanbul ignore if */
     if (process.env.NODE_ENV !== "production" && config.performance && mark) {
@@ -120,15 +122,18 @@ export function initMixin(Vue: Class<Component>) {
       // 挂载过程 它与平台、构建方式都有关
       vm.$mount(vm.$options.el); // compiler template渲染成最终的DOM
     }
-    // 否则，手动调用 vm.$mount(el)
+    // 否则，手动调用 vm.$mount(el)，e.g. Component初始化时没有el的。因此它是自己接管了 $mount 的过程
   };
 }
 
+// 初始化子组件, 对options进行合并，将结果保留在 $options 中
 export function initInternalComponent(
   vm: Component,
   options: InternalComponentOptions
 ) {
-  const opts = (vm.$options = Object.create(vm.constructor.options));
+  console.log('initInternalComponent: ', vm, options)
+  // 合并$options, 同时添加了一堆_xx属性
+  const opts = (vm.$options = Object.create(vm.constructor.options)); // vm.constructor 就是 Sub
   // doing this because it's faster than dynamic enumeration.
   const parentVnode = options._parentVnode;
   opts.parent = options.parent;
@@ -144,9 +149,47 @@ export function initInternalComponent(
     opts.render = options.render;
     opts.staticRenderFns = options.staticRenderFns;
   }
+  console.log(vm.$options)
+  /**
+   * 处理完成之后，vm.$options 大致如下
+   */
+  // vm.$options = {
+  //   parent: Vue /*父Vue实例*/,
+  //   propsData: undefined,
+  //   _componentTag: undefined,
+  //   _parentVnode: VNode /*父VNode实例*/,
+  //   _renderChildren:undefined,
+  //   __proto__: {
+  //     components: { },
+  //     directives: { },
+  //     filters: { },
+  //     _base: function Vue(options) {
+  //         //...
+  //     },
+  //     _Ctor: {},
+  //     created: [
+  //       function created() {
+  //         console.log('parent created')
+  //       }, function created() {
+  //         console.log('child created')
+  //       }
+  //     ],
+  //     mounted: [
+  //       function mounted() {
+  //         console.log('child mounted')
+  //       }
+  //     ],
+  //     data() {
+  //       return {
+  //         msg: 'Hello Vue'
+  //       }
+  //     },
+  //     template: '<div>{{msg}}</div>'
+  //   }
+  // }
 }
 
-// 从组件<构造函数>中解析配置对象 options，并合并基类选项
+// 从组件<构造函数 - a plain object 才对>中解析配置对象 options，并合并基类选项
 export function resolveConstructorOptions(Ctor: Class<Component>) {
   let options = Ctor.options;
   if (Ctor.super) {

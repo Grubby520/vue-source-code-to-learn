@@ -123,7 +123,20 @@ export function createPatchFunction (backend) {
 
   let creatingElmInVPre = 0
 
-  // 核心-通过虚拟节点创建真实的DOM并插入到其父节点种
+  /**
+   * 核心-通过虚拟节点创建真实的DOM并插入到其父节点种
+   * @param {*} vnode _render() 获取的渲染的 vnode
+   * @param {*} insertedVnodeQueue 
+   * @param {*} parentElm 
+   * @param {*} refElm 
+   * @param {*} nested 
+   * @param {*} ownerArray 
+   * @param {*} index 
+   * @returns 
+   * 
+   * 1、普通vnode节点和组件的vnode节点转转换成真正的DOM上有什么不一样的地方？
+   */
+
   function createElm (
     vnode,
     insertedVnodeQueue,
@@ -214,7 +227,9 @@ export function createPatchFunction (backend) {
     }
   }
 
+  // 创建组件
   function createComponent (vnode, insertedVnodeQueue, parentElm, refElm) {
+    console.log('createComponent: ', vnode)
     let i = vnode.data
     if (isDef(i)) {
       const isReactivated = isDef(vnode.componentInstance) && i.keepAlive
@@ -226,8 +241,8 @@ export function createPatchFunction (backend) {
       // component also has set the placeholder vnode's elm.
       // in that case we can just return the element and be done.
       if (isDef(vnode.componentInstance)) {
-        initComponent(vnode, insertedVnodeQueue)
-        insert(parentElm, vnode.elm, refElm)
+        initComponent(vnode, insertedVnodeQueue) // step 1
+        insert(parentElm, vnode.elm, refElm) // step 2 插入到父节点dom中
         if (isTrue(isReactivated)) {
           reactivateComponent(vnode, insertedVnodeQueue, parentElm, refElm)
         }
@@ -581,14 +596,16 @@ export function createPatchFunction (backend) {
     }
   }
 
+  // VNode patch 到 DOM 之后，会执行它，依次执行 insertedVnodeQueue 保存的钩子函数
   function invokeInsertHook (vnode, queue, initial) {
+    console.log('queue: ', queue)
     // delay insert hooks for component root nodes, invoke them after the
     // element is really inserted
     if (isTrue(initial) && isDef(vnode.parent)) {
-      vnode.parent.data.pendingInsert = queue
+      vnode.parent.data.pendingInsert = queue // 'pendingInsert'
     } else {
       for (let i = 0; i < queue.length; ++i) {
-        queue[i].data.hook.insert(queue[i])
+        queue[i].data.hook.insert(queue[i]) // 'insert' 'vdom/create-component.js'
       }
     }
   }
@@ -720,7 +737,7 @@ export function createPatchFunction (backend) {
     }
 
     let isInitialPatch = false
-    const insertedVnodeQueue = []
+    const insertedVnodeQueue = [] // 先子后父
 
     if (isUndef(oldVnode)) {
       // empty mount (likely as component), create new root element
@@ -813,7 +830,7 @@ export function createPatchFunction (backend) {
       }
     }
 
-    invokeInsertHook(vnode, insertedVnodeQueue, isInitialPatch)
+    invokeInsertHook(vnode, insertedVnodeQueue, isInitialPatch) // patch完成之后，执行的函数
     return vnode.elm
   }
 }

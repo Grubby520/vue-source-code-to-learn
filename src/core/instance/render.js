@@ -117,11 +117,13 @@ export function renderMixin(Vue: Class<Component>) {
       // separately from one another. Nested component's render fns are called
       // when parent component is patched.
       currentRenderingInstance = vm;
+      // question ?
+      // debugger
       vnode = render.call(vm._renderProxy, vm.$createElement); // vm.$options.render 返回vnode
-//       function anonymous(
-// ) {
-// with(this){return _c('div',{attrs:{"id":"app"}},[_c('p',{attrs:{"id":"p"}},[_v(_s(msg))]),_v(" "),_c('button',{attrs:{"id":"btn"},on:{"click":handleClick}},[_v("Click Me")]),_v(" "),_c('p',[_v(_s(obj))])])}
-// }
+      //       function anonymous(
+      // ) {
+      // with(this){return _c('div',{attrs:{"id":"app"}},[_c('p',{attrs:{"id":"p"}},[_v(_s(msg))]),_v(" "),_c('button',{attrs:{"id":"btn"},on:{"click":handleClick}},[_v("Click Me")]),_v(" "),_c('p',[_v(_s(obj))])])}
+      // }
     } catch (e) {
       handleError(e, vm, `render`);
       // return error render result,

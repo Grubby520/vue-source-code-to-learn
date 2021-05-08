@@ -18,6 +18,7 @@ import {
   defineReactive,
 } from "../util/index";
 
+// 初始化Vue本身的全局API
 export function initGlobalAPI(Vue: GlobalAPI) {
   // config
   const configDef = {};
@@ -61,9 +62,9 @@ export function initGlobalAPI(Vue: GlobalAPI) {
 
   // this is used to identify the "base" constructor to extend all plain-object
   // components with in Weex's multi-instance scenarios.
-  Vue.options._base = Vue;
+  Vue.options._base = Vue; // 实例化子组件的时候用它
 
-  extend(Vue.options.components, builtInComponents); // keep-alive
+  extend(Vue.options.components, builtInComponents); // 内置组件 目前有 keep-alive、transition 和 transition-group
 
   initUse(Vue); // .use 安装插件 { install } 
   initMixin(Vue); // .mixin
