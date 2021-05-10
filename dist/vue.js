@@ -712,7 +712,10 @@
 
   var uid = 0; // 每个dep都有一个uid
 
-  /**
+  /** 
+   * Dep -> Dependence 依赖
+   * Dep实际上是对 Watch 的一种管理，Dep 脱离 Watcher 单独存在是没有意义的
+   * Dep 和 Watcher 这个相互依赖的关系，设计得很是巧妙呢 wtf !
    * A dep is an observable that can have multiple
    * directives subscribing to it.
    * 观察者模式
@@ -726,7 +729,8 @@
   };
 
   Dep.prototype.addSub = function addSub (sub) {
-    this.subs.push(sub);
+    this.subs.push(sub); // 反过来 把 watcher 订阅到这个数据持有的 dep 的 subs中，
+    // why? 为后续数据变化时，通知对应的subscribers，即为 subs
   };
 
   Dep.prototype.removeSub = function removeSub (sub) {
@@ -736,8 +740,8 @@
   // ? watcher中添加dep
   Dep.prototype.depend = function depend () {
     // console.log(Dep.target);
-    if (Dep.target) {
-      Dep.target.addDep(this);
+    if (Dep.target) { // watcher.js -> line-103 this.get() -> pushTarget() 已经赋为渲染Watcher
+      Dep.target.addDep(this); // watcher里存储dep，后面有什么作用?
     }
   };
 
@@ -765,13 +769,14 @@
   var targetStack = []; // 目标堆栈
 
   function pushTarget(target) {
-    targetStack.push(target); // 收集依赖
-    Dep.target = target; // Dep.target就是当前正在执行的watcher;
+    targetStack.push(target); // 压栈
+    Dep.target = target; // Dep.target就是当前正在 渲染 watcher,并压栈(为了恢复时使用);
   }
 
   function popTarget() {
-    targetStack.pop(); // pop一个值
+    targetStack.pop(); // 恢复到上一个状态
     Dep.target = targetStack[targetStack.length - 1]; // 始终指向最后的那个watcher
+    // why? 当前vm的数据依赖收集也结束，对应的 Dep.target 也要改变，顺序就是 从子到父
   }
 
   /*  */
@@ -1058,7 +1063,7 @@
     shallow
   ) {
     // debugger
-    var dep = new Dep(); // 一个key，一个dep实例
+    var dep = new Dep(); // 一个key，一个Dep实例
 
     var property = Object.getOwnPropertyDescriptor(obj, key);
     if (property && property.configurable === false) {
@@ -1073,13 +1078,14 @@
       val = obj[key];
     }
 
-    var childOb = !shallow && observe(val);
+    var childOb = !shallow && observe(val); // ? wtf
     Object.defineProperty(obj, key, {
       enumerable: true,
       configurable: true,
-      get: function reactiveGetter() {
+      // 什么时候触发这个getter?
+      get: function reactiveGetter() { // 收集依赖
         // debugger
-        var value = getter ? getter.call(obj) : val;
+        var value = getter ? getter.call(obj) : val; // 
         /**
          * Dep.target 为 Dep 类的一个静态属性，值为 watcher，在实例化 Watcher 时会被设置
          * 实例化 Watcher 时会执行 new Watcher 时传递的回调函数（computed 除外，因为它懒执行）
@@ -1087,7 +1093,8 @@
          * 回调函数执行完以后又会将 Dep.target 设置为 null，避免这里重复收集依赖
          */
         if (Dep.target) {
-          dep.depend();
+          dep.depend(); // 收集依赖 Dep.target 已经被赋值成当前 渲染Watcher
+          // ? childOb的作用
           if (childOb) {
             childOb.dep.depend(); // this.key.childKey 能被触发响应式更新的原因
             if (Array.isArray(value)) {
@@ -1097,7 +1104,7 @@
         }
         return value;
       },
-      set: function reactiveSetter(newVal) {
+      set: function reactiveSetter(newVal) { // 派发更新
         // debugger
         var value = getter ? getter.call(obj) : val; // 旧值
         /* eslint-disable no-self-compare */
@@ -4387,9 +4394,11 @@
       };
     } else {
       updateComponent = function () {
-        // question ? -> 什么时候调用的 ?
+        // question ? -> 什么时候调用的 ? -> 下面new Watcher()  mountComponent调用的时候
         // debugger
+        // 五星级权重代码
         vm._update(vm._render(), hydrating); // _render生成VNode, _update渲染成真实的DOM
+        // ._render() 对vm上的响应式数据进行访问，触发对应的getter
       };
     }
 
@@ -4772,11 +4781,14 @@
    */
   var Watcher = function Watcher(
     vm,
-    expOrFn,
+    expOrFn, // 外部传入的 updateComponent 赋值给this.getter
     cb,
     options,
     isRenderWatcher // 是不是mount阶段定义的renderWatcher
   ) {
+
+    console.log('expOrFn: ', vm, expOrFn);
+    
     this.vm = vm;
     if (isRenderWatcher) {
       vm._watcher = this; // 组件实例存储定义的renderWatcher的赋值操作的地方.专门用来监听 vm 上数据变化然后重新渲染的，所以它是一个渲染相关的 watcher
@@ -4797,10 +4809,13 @@
     this.id = ++uid$1; // uid for batching
     this.active = true; // 默认值
     this.dirty = this.lazy; // for lazy watchers
+
+    // 为什么要设计两个deps? 
     this.deps = [];
     this.newDeps = [];
     this.depIds = new _Set();
     this.newDepIds = new _Set();
+
     this.expression =
        expOrFn.toString() ;
     // parse expression for getter
@@ -4819,7 +4834,7 @@
           );
       }
     }
-    this.value = this.lazy ? undefined : this.get();
+    this.value = this.lazy ? undefined : this.get(); // new 最终调用this.get()
   };
 
   /**
@@ -4833,12 +4848,14 @@
    * 因为触发更新说明有响应式数据被更新了，但是被更新的数据虽然已经经过 observe 观察了，但是却没有进行依赖收集，
    * 所以，在更新页面时，会重新执行一次 render 函数，执行期间会触发读取操作，这时候进行依赖收集
    */
+  // mountComponent -> new Watcher() -> this.get()
   Watcher.prototype.get = function get () {
-    pushTarget(this); // 收集依赖
+    pushTarget(this); // 收集依赖 Dep.target赋值为当前渲染watcher，并压栈
     var value;
     var vm = this.vm;
     try {
-      value = this.getter.call(vm, vm); // 执行getter回调函数
+      value = this.getter.call(vm, vm); // 最终执行的是 vm._update(vm._render(), hydrating)
+      // 依赖收集已完成
     } catch (e) {
       if (this.user) {
         handleError(e, vm, ("getter for watcher \"" + (this.expression) + "\""));
@@ -4852,28 +4869,29 @@
         traverse(value); // 开启deep依赖，对象就会递归的evoke getters，每个key都会收集依赖
       }
       popTarget();
-      this.cleanupDeps(); // ?
+      this.cleanupDeps(); // 细节：数据依赖收集完成后，清空
     }
     return value;
   };
 
   /**
    * Add a dependency to this directive.
-   * watch中添加dep，dep中添加watch
+   * watcher中添加dep，dep中添加watcher, wtf ?
    */
   Watcher.prototype.addDep = function addDep (dep) {
     var id = dep.id;
     if (!this.newDepIds.has(id)) {
       this.newDepIds.add(id);
-      this.newDeps.push(dep); // watch中加dep
+      this.newDeps.push(dep); // watcher中加dep
       if (!this.depIds.has(id)) {
-        dep.addSub(this); // dep中加watch
+        dep.addSub(this); // dep中加watcher, 这个设计有点东西
       }
     }
   };
 
   /**
    * Clean up for dependency collection.
+   * 这个方法设计得有点东西 wtf !
    */
   Watcher.prototype.cleanupDeps = function cleanupDeps () {
     var i = this.deps.length;
@@ -4897,6 +4915,15 @@
     this.newDeps = tmp;
 
     this.newDeps.length = 0; // clean up
+
+    /*
+    这样设计的场景是什么?
+    那么为什么需要做 deps 订阅的移除呢，在添加 deps 的订阅过程，已经能通过 id 去重避免重复订阅了。
+
+    考虑到一种场景，我们的模板会根据 v-if 去渲染不同子模板 a 和 b，当我们满足某种条件的时候渲染 a 的时候，会访问到 a 中的数据，这时候我们对 a 使用的数据添加了 getter，做了依赖收集，那么当我们去修改 a 的数据的时候，理应通知到这些订阅者。那么如果我们一旦改变了条件渲染了 b 模板，又会对 b 使用的数据添加了 getter，如果我们没有依赖移除的过程，那么这时候我去修改 a 模板的数据，会通知 a 数据的订阅的回调，这显然是有浪费的。
+
+    因此 Vue 设计了在每次添加完新的订阅，会移除掉旧的订阅，这样就保证了在我们刚才的场景中，如果渲染 b 模板的时候去修改 a 模板的数据，a 数据订阅回调已经被移除了，所以不会有任何浪费，真的是非常赞叹 Vue 对一些细节上的处理
+    */
   };
 
   /**
@@ -5023,7 +5050,7 @@
     sharedPropertyDefinition.set = function proxySetter(val) {
       this[sourceKey][key] = val;
     };
-    // 考点：如何实现this.xx获取data里的数据
+    // 考点：如何实现this.xx获取data里的数据 this.key this._data.key
     Object.defineProperty(target, key, sharedPropertyDefinition);
   }
 

@@ -11,34 +11,34 @@
         <p id="p">{{msg}}</p>
         <button id="btn" @click="handleClick">Click Me</button>
         <p>{{obj}}</p>
-        <div>
+        <!-- <div>
             child:
             <p>
                 <child />
             </p>
-        </div>
+        </div> -->
     </div>
     <script src="../dist/vue.js"></script>
     <script>
         debugger;
         console.log(Vue.prototype)
         // import Child from './child.vue'
-        Vue.component('child', {
-            template: '<ul><li v-for="item of list" :key="item.value">{{ item.key }}</li></ul>',
-            data() {
-                return {
-                    list: [
-                        {
-                            key: "li",
-                            value: "li",
-                        },{
-                            key: "lan",
-                            value: "lan",
-                        },
-                    ],
-                };
-            }
-        })
+        // Vue.component('child', {
+        //     template: '<ul><li v-for="item of list" :key="item.value">{{ item.key }}</li></ul>',
+        //     data() {
+        //         return {
+        //             list: [
+        //                 {
+        //                     key: "li",
+        //                     value: "li",
+        //                 },{
+        //                     key: "lan",
+        //                     value: "lan",
+        //                 },
+        //             ],
+        //         };
+        //     }
+        // })
 
         const app = new Vue({
             el: '#app',

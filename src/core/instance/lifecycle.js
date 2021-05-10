@@ -226,9 +226,11 @@ export function mountComponent(
     };
   } else {
     updateComponent = () => {
-      // question ? -> 什么时候调用的 ?
+      // question ? -> 什么时候调用的 ? -> 下面new Watcher()  mountComponent调用的时候
       // debugger
+      // 五星级权重代码
       vm._update(vm._render(), hydrating); // _render生成VNode, _update渲染成真实的DOM
+      // ._render() 对vm上的响应式数据进行访问，触发对应的getter
     };
   }
 

@@ -43,7 +43,7 @@ export function proxy(target: Object, sourceKey: string, key: string) {
   sharedPropertyDefinition.set = function proxySetter(val) {
     this[sourceKey][key] = val;
   };
-  // 考点：如何实现this.xx获取data里的数据
+  // 考点：如何实现this.xx获取data里的数据 this.key this._data.key
   Object.defineProperty(target, key, sharedPropertyDefinition);
 }
 

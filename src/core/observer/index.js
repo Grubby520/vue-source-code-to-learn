@@ -158,7 +158,7 @@ export function defineReactive(
   shallow?: boolean
 ) {
   // debugger
-  const dep = new Dep(); // 一个key，一个dep实例
+  const dep = new Dep(); // 一个key，一个Dep实例
 
   const property = Object.getOwnPropertyDescriptor(obj, key);
   if (property && property.configurable === false) {
@@ -173,13 +173,14 @@ export function defineReactive(
     val = obj[key];
   }
 
-  let childOb = !shallow && observe(val);
+  let childOb = !shallow && observe(val); // ? wtf
   Object.defineProperty(obj, key, {
     enumerable: true,
     configurable: true,
-    get: function reactiveGetter() {
+    // 什么时候触发这个getter?
+    get: function reactiveGetter() { // 收集依赖
       // debugger
-      const value = getter ? getter.call(obj) : val;
+      const value = getter ? getter.call(obj) : val; // 
       /**
        * Dep.target 为 Dep 类的一个静态属性，值为 watcher，在实例化 Watcher 时会被设置
        * 实例化 Watcher 时会执行 new Watcher 时传递的回调函数（computed 除外，因为它懒执行）
@@ -187,7 +188,8 @@ export function defineReactive(
        * 回调函数执行完以后又会将 Dep.target 设置为 null，避免这里重复收集依赖
        */
       if (Dep.target) {
-        dep.depend();
+        dep.depend(); // 收集依赖 Dep.target 已经被赋值成当前 渲染Watcher
+        // ? childOb的作用
         if (childOb) {
           childOb.dep.depend(); // this.key.childKey 能被触发响应式更新的原因
           if (Array.isArray(value)) {
@@ -197,7 +199,7 @@ export function defineReactive(
       }
       return value;
     },
-    set: function reactiveSetter(newVal) {
+    set: function reactiveSetter(newVal) { // 派发更新
       // debugger
       const value = getter ? getter.call(obj) : val; // 旧值
       /* eslint-disable no-self-compare */
