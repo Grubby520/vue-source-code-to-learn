@@ -342,12 +342,13 @@
 
   /**
    * Ensure a function is called only once.
+   * 闭包无处不在
    */
   function once (fn) {
-    var called = false;
+    var called = false; // 标志位
     return function () {
       if (!called) {
-        called = true;
+        called = true; // 包装函数fn只会执行一次
         fn.apply(this, arguments);
       }
     }
@@ -1667,6 +1668,7 @@
    * Resolve an asset.
    * This function is used because child instances need access
    * to assets defined in its ancestor chain.
+   * 全局注册的id： 可以是连字符、驼峰或首字母大写的形式（内部按一定顺序进行转换处理）
    */
   function resolveAsset(
     options,
@@ -1678,19 +1680,21 @@
     if (typeof id !== "string") {
       return;
     }
-    var assets = options[type];
+    debugger
+    var assets = options[type]; // components属性值
     // check local registration variations first
-    if (hasOwn(assets, id)) { return assets[id]; }
-    var camelizedId = camelize(id);
+    if (hasOwn(assets, id)) { return assets[id]; } // 值是 name 或者 id
+    var camelizedId = camelize(id); // 把连字符转成驼峰
     if (hasOwn(assets, camelizedId)) { return assets[camelizedId]; }
-    var PascalCaseId = capitalize(camelizedId);
+    var PascalCaseId = capitalize(camelizedId); // 再转成首字大写
     if (hasOwn(assets, PascalCaseId)) { return assets[PascalCaseId]; }
     // fallback to prototype chain
     var res = assets[id] || assets[camelizedId] || assets[PascalCaseId];
     if ( warnMissing && !res) {
       warn("Failed to resolve " + type.slice(0, -1) + ": " + id, options);
     }
-    return res;
+    return 
+    ;
   }
 
   /*  */
@@ -3337,7 +3341,7 @@
 
   /**
    * .vue文件 Component类型
-   * @param {*} Ctor 
+   * @param {*} Ctor 异步组件就是工厂函数 Function | .vue文件 Class
    * @param {*} data 
    * @param {*} context 
    * @param {*} children 
@@ -3357,7 +3361,7 @@
     tag
   ) {
 
-    console.log(arguments);
+    console.log('createComponent: ', arguments);
 
     if (isUndef(Ctor)) {
       return
@@ -3368,7 +3372,7 @@
     // plain options object: turn it into a constructor
     // step 1
     if (isObject(Ctor)) {
-      Ctor = baseCtor.extend(Ctor); // Object类型 .extend做了什么 ‘global-api/extend.js’
+      Ctor = baseCtor.extend(Ctor); // Object类型 .extend做了什么 ‘global-api/extend.js’ 转换成基于Vue的Sub构造函数
     }
 
     // if at this stage it's not a constructor or an async component factory,
@@ -3380,16 +3384,18 @@
       return
     }
 
-    // async component
+    // async component 异步组件
     var asyncFactory;
     if (isUndef(Ctor.cid)) {
       asyncFactory = Ctor;
       Ctor = resolveAsyncComponent(asyncFactory, baseCtor);
       if (Ctor === undefined) {
+        // 除非是高级异步组件 delay为0 创建一个loading组件，否则默认都会进来
         // return a placeholder node for async component, which is rendered
         // as a comment node but preserves all the raw information for the node.
         // the information will be used for async server-rendering and hydration.
-        // 创建一个父节点占位符
+        // 异步加载的都先会创建一个父节点占位符，会把内容挂载到这个vnode上，等到真正$forceRender,重绘，
+        // 不同的是，patch时，与普通第一次渲染组件不一样，它有oldVNode
         return createAsyncPlaceholder(
           asyncFactory,
           data,
@@ -3631,7 +3637,8 @@
           undefined, undefined, context
         );
       } else if ((!data || !data.pre) && isDef(Ctor = resolveAsset(context.$options, 'components', tag))) {
-        // component 已注册的组件名
+        // Ctor 全局Component中已注册的组件名
+        console.log('Ctor: ', Ctor);
         vnode = createComponent(Ctor, data, context, children, tag);
       } else {
         // unknown or unlisted namespaced elements 创建一个未知标签的VNode
@@ -3734,7 +3741,7 @@
       );
     }
   }
-
+  // 全局变量，当前只会有一个rendering instance
   var currentRenderingInstance = null;
 
   function renderMixin(Vue) {
@@ -3830,10 +3837,11 @@
       comp.__esModule ||
       (hasSymbol && comp[Symbol.toStringTag] === 'Module')
     ) {
-      comp = comp.default;
+      console.log(comp);
+      comp = comp.default; // 拿值
     }
     return isObject(comp)
-      ? base.extend(comp)
+      ? base.extend(comp) // Sub
       : comp
   }
 
@@ -3850,9 +3858,16 @@
     return node
   }
 
+  /**
+   * 解析异步组件
+   * 内部实现3种定义方式：
+   * 工厂函数 require
+   * 工厂函数 import 返回一个Promise
+   * 局部注册 components中的key值，直接import 返回一个Promise
+   */
   function resolveAsyncComponent (
-    factory,
-    baseCtor
+    factory, // Sub
+    baseCtor // Vue
   ) {
     if (isTrue(factory.error) && isDef(factory.errorComp)) {
       return factory.errorComp
@@ -3862,6 +3877,8 @@
       return factory.resolved
     }
 
+    console.log('factory: ', factory);
+
     var owner = currentRenderingInstance;
     if (owner && isDef(factory.owners) && factory.owners.indexOf(owner) === -1) {
       // already pending
@@ -3869,7 +3886,7 @@
     }
 
     if (isTrue(factory.loading) && isDef(factory.loadingComp)) {
-      return factory.loadingComp
+      return factory.loadingComp // 加载渲染过程中的loading组件
     }
 
     if (owner && !isDef(factory.owners)) {
@@ -3882,7 +3899,7 @@
 
       var forceRender = function (renderCompleted) {
         for (var i = 0, l = owners.length; i < l; i++) {
-          (owners[i]).$forceUpdate();
+          (owners[i]).$forceUpdate(); // 没有数据变化，手动强制重绘页面
         }
 
         if (renderCompleted) {
@@ -3899,7 +3916,7 @@
       };
 
       var resolve = once(function (res) {
-        // cache resolved
+        // cache resolved 缓存起来
         factory.resolved = ensureCtor(res, baseCtor);
         // invoke callbacks only if this is not a synchronous resolve
         // (async resolves are shimmed as synchronous during SSR)
@@ -3921,15 +3938,18 @@
         }
       });
 
-      var res = factory(resolve, reject);
+      // 正式开始渲染（异步过程）
+      var res = factory(resolve, reject); // 组件的工厂函数通常会先发送请求去加载我们的异步组件的 JS 文件
 
+      // 巧妙设置：实现了loading, resolve, reject, timeout 4种状态
       if (isObject(res)) {
         if (isPromise(res)) {
           // () => Promise
-          if (isUndef(factory.resolved)) {
+          if (isUndef(factory.resolved)) { // 避免重复渲染
             res.then(resolve, reject);
           }
         } else if (isPromise(res.component)) {
+          // 属性包括：component, error, loading, timeout, delay
           res.component.then(resolve, reject);
 
           if (isDef(res.error)) {
@@ -3955,7 +3975,7 @@
             timerTimeout = setTimeout(function () {
               timerTimeout = null;
               if (isUndef(factory.resolved)) {
-                reject(
+                reject( // 超时结束的实现：通过Promise，直接reject
                    ("timeout (" + (res.timeout) + "ms)")
                     
                 );
@@ -4261,7 +4281,7 @@
     Vue.prototype.$destroy = function () {
       var vm = this;
       if (vm._isBeingDestroyed) {
-        // N多状态，优化手段之一，用boolean来判断（难道是异步任务?）
+        // N多状态，优化手段之一，用boolean来判断（难道是异步任务? -> 可能多次调用）
         return;
       }
       callHook(vm, "beforeDestroy"); // 调用钩子回调函数
@@ -4282,29 +4302,31 @@
       // remove reference from data ob
       // frozen object may not have observer.
       if (vm._data.__ob__) {
-        vm._data.__ob__.vmCount--;
+        vm._data.__ob__.vmCount--; // ? 移除对data observer 的引用关系
       }
       // call the last hook...
       vm._isDestroyed = true;
       // invoke destroy hooks on current rendered tree
-      vm.__patch__(vm._vnode, null); // 更新视图？ 销毁节点？
+      // 更新视图？ 销毁节点？ 触发子组件的销毁钩子函数，一层层的递归调用，钩子函数执行顺序-先子后父（类似mounted 过程）
+      // 新的vnode为null， 即为销毁， 调用 invokeDestroyHook
+      vm.__patch__(vm._vnode, null);
       // fire destroyed hook
       callHook(vm, "destroyed"); // 调用钩子回调函数
       // turn off all instance listeners.
       vm.$off(); // 解绑所有自定义监听器
       // remove __vue__ reference
       if (vm.$el) {
-        vm.$el.__vue__ = null;
+        vm.$el.__vue__ = null; // 解除对自身的引用
       }
       // release circular reference (#6759)
       if (vm.$vnode) {
-        vm.$vnode.parent = null; // ???
+        vm.$vnode.parent = null; // ? 释放循环引用 (wtf,循环引用没毛病?)
       }
     };
   }
 
   /**
-   * 核心：实例化一个renderWatcher
+   * 核心：在mount阶段，实例化一个renderWatcher，监听vm上的数据变化以重新渲染
    * 并调用 prototype._render 方法生成虚拟DOM
    * 并最终调用 prototype._update 更新DOM
    * 
@@ -4381,7 +4403,7 @@
       {
         before: function before() { // this.before
           if (vm._isMounted && !vm._isDestroyed) {
-            callHook(vm, "beforeUpdate");
+            callHook(vm, "beforeUpdate"); // renderWatcher,数据更新时触发的回调
           }
         },
       },
@@ -4657,7 +4679,8 @@
     resetSchedulerState();
 
     // call component updated and activated hooks
-    callActivatedHooks(activatedQueue);
+    callActivatedHooks(activatedQueue); // keep-alive 组件
+    // ? 怎么保证 vm._watcher 的回调函数执行完毕才调用 updated 钩子函数
     callUpdatedHooks(updatedQueue);
 
     // devtool hook
@@ -4672,6 +4695,7 @@
     while (i--) {
       var watcher = queue[i];
       var vm = watcher.vm;
+      // 整个队列里找到符合条件的：当前watcher + 已经mounted + 没有销毁
       if (vm._watcher === watcher && vm._isMounted && !vm._isDestroyed) {
         callHook(vm, "updated"); // 刷新队列 flushSchedulerQueue 时，调用它
       }
@@ -4751,13 +4775,13 @@
     expOrFn,
     cb,
     options,
-    isRenderWatcher
+    isRenderWatcher // 是不是mount阶段定义的renderWatcher
   ) {
     this.vm = vm;
     if (isRenderWatcher) {
-      vm._watcher = this;
+      vm._watcher = this; // 组件实例存储定义的renderWatcher的赋值操作的地方.专门用来监听 vm 上数据变化然后重新渲染的，所以它是一个渲染相关的 watcher
     }
-    vm._watchers.push(this);
+    vm._watchers.push(this); // 还有其他类型的watcher：?
     // options
     if (options) {
       // !! 转成boolean值
@@ -5819,7 +5843,7 @@
   function initAssetRegisters(Vue) {
     /**
      * Create asset registration methods.
-     * * 定义 Vue.component、Vue.filter、Vue.directive 这三个方法
+     * * 定义 Vue.component、Vue.filter、Vue.directive 这三个全局函数
      * 这三个方法所做的事情是类似的，就是在 this.options.xx 上存放对应的配置
      * 比如 Vue.component(compName, {xx}) 结果是 this.options.components.compName = 组件构造函数
      * ASSET_TYPES = ['component', 'directive', 'filter']
@@ -5838,13 +5862,15 @@
           }
           if (type === "component" && isPlainObject(definition)) {
             definition.name = definition.name || id; // name的作用
-            definition = this.options._base.extend(definition); // _base
+            // 把definition对象转换成一个继承了Vue的构造函数
+            definition = this.options._base.extend(definition); // ._base === Vue Vue.extend, 返回内部Sub构造函数
           }
           if (type === "directive" && typeof definition === "function") {
             definition = { bind: definition, update: definition };
           }
           // 外部调用时，在实例化时通过 mergeOptions 将全局注册的组件合并到每个组件的配置对象的 components 中
-          this.options[type + "s"][id] = definition;
+          // 全局的是 Vue.options.components (与局部的做对比)
+          this.options[type + "s"][id] = definition; // Sub.options = mergeOptions(Super.options, extendOptions) Super就是全局的Vue
           return definition;
         }
       };
@@ -6465,6 +6491,7 @@
     return map
   }
 
+  // vm的 .__patch__ 函数
   function createPatchFunction (backend) {
     var i, j;
     var cbs = {};
@@ -9705,7 +9732,7 @@
   extend(Vue.options.components, platformComponents);
 
   // install platform patch function
-  Vue.prototype.__patch__ = inBrowser ? patch : noop; // 不需要传参 
+  Vue.prototype.__patch__ = inBrowser ? patch : noop; // 不需要传参 createPatchFunction => patch
 
   // public mount method
   // 公共的 $mount 定义的地方

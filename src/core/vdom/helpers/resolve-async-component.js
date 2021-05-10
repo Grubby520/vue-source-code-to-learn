@@ -20,10 +20,11 @@ function ensureCtor (comp: any, base) {
     comp.__esModule ||
     (hasSymbol && comp[Symbol.toStringTag] === 'Module')
   ) {
-    comp = comp.default
+    console.log(comp)
+    comp = comp.default // 拿值
   }
   return isObject(comp)
-    ? base.extend(comp)
+    ? base.extend(comp) // Sub
     : comp
 }
 
@@ -40,9 +41,16 @@ export function createAsyncPlaceholder (
   return node
 }
 
+/**
+ * 解析异步组件
+ * 内部实现3种定义方式：
+ * 工厂函数 require
+ * 工厂函数 import 返回一个Promise
+ * 局部注册 components中的key值，直接import 返回一个Promise
+ */
 export function resolveAsyncComponent (
-  factory: Function,
-  baseCtor: Class<Component>
+  factory: Function, // Sub
+  baseCtor: Class<Component> // Vue
 ): Class<Component> | void {
   if (isTrue(factory.error) && isDef(factory.errorComp)) {
     return factory.errorComp
@@ -52,6 +60,8 @@ export function resolveAsyncComponent (
     return factory.resolved
   }
 
+  console.log('factory: ', factory)
+
   const owner = currentRenderingInstance
   if (owner && isDef(factory.owners) && factory.owners.indexOf(owner) === -1) {
     // already pending
@@ -59,7 +69,7 @@ export function resolveAsyncComponent (
   }
 
   if (isTrue(factory.loading) && isDef(factory.loadingComp)) {
-    return factory.loadingComp
+    return factory.loadingComp // 加载渲染过程中的loading组件
   }
 
   if (owner && !isDef(factory.owners)) {
@@ -72,7 +82,7 @@ export function resolveAsyncComponent (
 
     const forceRender = (renderCompleted: boolean) => {
       for (let i = 0, l = owners.length; i < l; i++) {
-        (owners[i]: any).$forceUpdate()
+        (owners[i]: any).$forceUpdate() // 没有数据变化，手动强制重绘页面
       }
 
       if (renderCompleted) {
@@ -89,7 +99,7 @@ export function resolveAsyncComponent (
     }
 
     const resolve = once((res: Object | Class<Component>) => {
-      // cache resolved
+      // cache resolved 缓存起来
       factory.resolved = ensureCtor(res, baseCtor)
       // invoke callbacks only if this is not a synchronous resolve
       // (async resolves are shimmed as synchronous during SSR)
@@ -111,15 +121,18 @@ export function resolveAsyncComponent (
       }
     })
 
-    const res = factory(resolve, reject)
+    // 正式开始渲染（异步过程）
+    const res = factory(resolve, reject) // 组件的工厂函数通常会先发送请求去加载我们的异步组件的 JS 文件
 
+    // 巧妙设置：实现了loading, resolve, reject, timeout 4种状态
     if (isObject(res)) {
       if (isPromise(res)) {
         // () => Promise
-        if (isUndef(factory.resolved)) {
+        if (isUndef(factory.resolved)) { // 避免重复渲染
           res.then(resolve, reject)
         }
       } else if (isPromise(res.component)) {
+        // 属性包括：component, error, loading, timeout, delay
         res.component.then(resolve, reject)
 
         if (isDef(res.error)) {
@@ -145,7 +158,7 @@ export function resolveAsyncComponent (
           timerTimeout = setTimeout(() => {
             timerTimeout = null
             if (isUndef(factory.resolved)) {
-              reject(
+              reject( // 超时结束的实现：通过Promise，直接reject
                 process.env.NODE_ENV !== 'production'
                   ? `timeout (${res.timeout}ms)`
                   : null

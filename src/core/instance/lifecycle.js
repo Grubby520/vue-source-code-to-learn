@@ -120,7 +120,7 @@ export function lifecycleMixin(Vue: Class<Component>) {
   Vue.prototype.$destroy = function () {
     const vm: Component = this;
     if (vm._isBeingDestroyed) {
-      // N多状态，优化手段之一，用boolean来判断（难道是异步任务?）
+      // N多状态，优化手段之一，用boolean来判断（难道是异步任务? -> 可能多次调用）
       return;
     }
     callHook(vm, "beforeDestroy"); // 调用钩子回调函数
@@ -141,29 +141,31 @@ export function lifecycleMixin(Vue: Class<Component>) {
     // remove reference from data ob
     // frozen object may not have observer.
     if (vm._data.__ob__) {
-      vm._data.__ob__.vmCount--;
+      vm._data.__ob__.vmCount--; // ? 移除对data observer 的引用关系
     }
     // call the last hook...
     vm._isDestroyed = true;
     // invoke destroy hooks on current rendered tree
-    vm.__patch__(vm._vnode, null); // 更新视图？ 销毁节点？
+    // 更新视图？ 销毁节点？ 触发子组件的销毁钩子函数，一层层的递归调用，钩子函数执行顺序-先子后父（类似mounted 过程）
+    // 新的vnode为null， 即为销毁， 调用 invokeDestroyHook
+    vm.__patch__(vm._vnode, null);
     // fire destroyed hook
     callHook(vm, "destroyed"); // 调用钩子回调函数
     // turn off all instance listeners.
     vm.$off(); // 解绑所有自定义监听器
     // remove __vue__ reference
     if (vm.$el) {
-      vm.$el.__vue__ = null;
+      vm.$el.__vue__ = null; // 解除对自身的引用
     }
     // release circular reference (#6759)
     if (vm.$vnode) {
-      vm.$vnode.parent = null; // ???
+      vm.$vnode.parent = null; // ? 释放循环引用 (wtf,循环引用没毛病?)
     }
   };
 }
 
 /**
- * 核心：实例化一个renderWatcher
+ * 核心：在mount阶段，实例化一个renderWatcher，监听vm上的数据变化以重新渲染
  * 并调用 prototype._render 方法生成虚拟DOM
  * 并最终调用 prototype._update 更新DOM
  * 
@@ -240,7 +242,7 @@ export function mountComponent(
     {
       before() { // this.before
         if (vm._isMounted && !vm._isDestroyed) {
-          callHook(vm, "beforeUpdate");
+          callHook(vm, "beforeUpdate"); // renderWatcher,数据更新时触发的回调
         }
       },
     },

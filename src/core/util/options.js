@@ -456,6 +456,7 @@ export function mergeOptions(
  * Resolve an asset.
  * This function is used because child instances need access
  * to assets defined in its ancestor chain.
+ * 全局注册的id： 可以是连字符、驼峰或首字母大写的形式（内部按一定顺序进行转换处理）
  */
 export function resolveAsset(
   options: Object,
@@ -467,17 +468,19 @@ export function resolveAsset(
   if (typeof id !== "string") {
     return;
   }
-  const assets = options[type];
+  debugger
+  const assets = options[type]; // components属性值
   // check local registration variations first
-  if (hasOwn(assets, id)) return assets[id];
-  const camelizedId = camelize(id);
+  if (hasOwn(assets, id)) return assets[id]; // 值是 name 或者 id
+  const camelizedId = camelize(id); // 把连字符转成驼峰
   if (hasOwn(assets, camelizedId)) return assets[camelizedId];
-  const PascalCaseId = capitalize(camelizedId);
+  const PascalCaseId = capitalize(camelizedId); // 再转成首字大写
   if (hasOwn(assets, PascalCaseId)) return assets[PascalCaseId];
   // fallback to prototype chain
   const res = assets[id] || assets[camelizedId] || assets[PascalCaseId];
   if (process.env.NODE_ENV !== "production" && warnMissing && !res) {
     warn("Failed to resolve " + type.slice(0, -1) + ": " + id, options);
   }
-  return res;
+  return 
+  ;
 }

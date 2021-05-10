@@ -67,6 +67,7 @@ function createKeyToOldIdx (children, beginIdx, endIdx) {
   return map
 }
 
+// vm的 .__patch__ 函数
 export function createPatchFunction (backend) {
   let i, j
   const cbs = {}

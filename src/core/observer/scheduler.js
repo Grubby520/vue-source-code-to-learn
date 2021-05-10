@@ -123,7 +123,8 @@ function flushSchedulerQueue() {
   resetSchedulerState();
 
   // call component updated and activated hooks
-  callActivatedHooks(activatedQueue);
+  callActivatedHooks(activatedQueue); // keep-alive 组件
+  // ? 怎么保证 vm._watcher 的回调函数执行完毕才调用 updated 钩子函数
   callUpdatedHooks(updatedQueue);
 
   // devtool hook
@@ -138,6 +139,7 @@ function callUpdatedHooks(queue) {
   while (i--) {
     const watcher = queue[i];
     const vm = watcher.vm;
+    // 整个队列里找到符合条件的：当前watcher + 已经mounted + 没有销毁
     if (vm._watcher === watcher && vm._isMounted && !vm._isDestroyed) {
       callHook(vm, "updated"); // 刷新队列 flushSchedulerQueue 时，调用它
     }

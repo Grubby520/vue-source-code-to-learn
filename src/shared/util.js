@@ -331,12 +331,13 @@ export function looseIndexOf (arr: Array<mixed>, val: mixed): number {
 
 /**
  * Ensure a function is called only once.
+ * 闭包无处不在
  */
 export function once (fn: Function): Function {
-  let called = false
+  let called = false // 标志位
   return function () {
     if (!called) {
-      called = true
+      called = true // 包装函数fn只会执行一次
       fn.apply(this, arguments)
     }
   }

@@ -75,7 +75,7 @@ export function initRender(vm: Component) {
     );
   }
 }
-
+// 全局变量，当前只会有一个rendering instance
 export let currentRenderingInstance: Component | null = null;
 
 // for testing only

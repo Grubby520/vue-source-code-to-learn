@@ -48,13 +48,13 @@ export default class Watcher {
     expOrFn: string | Function,
     cb: Function,
     options?: ?Object,
-    isRenderWatcher?: boolean
+    isRenderWatcher?: boolean // 是不是mount阶段定义的renderWatcher
   ) {
     this.vm = vm;
     if (isRenderWatcher) {
-      vm._watcher = this;
+      vm._watcher = this; // 组件实例存储定义的renderWatcher的赋值操作的地方.专门用来监听 vm 上数据变化然后重新渲染的，所以它是一个渲染相关的 watcher
     }
-    vm._watchers.push(this);
+    vm._watchers.push(this); // 还有其他类型的watcher：?
     // options
     if (options) {
       // !! 转成boolean值

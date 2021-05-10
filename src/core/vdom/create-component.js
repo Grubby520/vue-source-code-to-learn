@@ -104,7 +104,7 @@ const hooksToMerge = Object.keys(componentVNodeHooks)
 
 /**
  * .vue文件 Component类型
- * @param {*} Ctor 
+ * @param {*} Ctor 异步组件就是工厂函数 Function | .vue文件 Class
  * @param {*} data 
  * @param {*} context 
  * @param {*} children 
@@ -124,7 +124,7 @@ export function createComponent (
   tag?: string
 ): VNode | Array<VNode> | void {
 
-  console.log(arguments)
+  console.log('createComponent: ', arguments)
 
   if (isUndef(Ctor)) {
     return
@@ -135,7 +135,7 @@ export function createComponent (
   // plain options object: turn it into a constructor
   // step 1
   if (isObject(Ctor)) {
-    Ctor = baseCtor.extend(Ctor) // Object类型 .extend做了什么 ‘global-api/extend.js’
+    Ctor = baseCtor.extend(Ctor) // Object类型 .extend做了什么 ‘global-api/extend.js’ 转换成基于Vue的Sub构造函数
   }
 
   // if at this stage it's not a constructor or an async component factory,
@@ -147,16 +147,18 @@ export function createComponent (
     return
   }
 
-  // async component
+  // async component 异步组件
   let asyncFactory
   if (isUndef(Ctor.cid)) {
     asyncFactory = Ctor
     Ctor = resolveAsyncComponent(asyncFactory, baseCtor)
     if (Ctor === undefined) {
+      // 除非是高级异步组件 delay为0 创建一个loading组件，否则默认都会进来
       // return a placeholder node for async component, which is rendered
       // as a comment node but preserves all the raw information for the node.
       // the information will be used for async server-rendering and hydration.
-      // 创建一个父节点占位符
+      // 异步加载的都先会创建一个父节点占位符，会把内容挂载到这个vnode上，等到真正$forceRender,重绘，
+      // 不同的是，patch时，与普通第一次渲染组件不一样，它有oldVNode
       return createAsyncPlaceholder(
         asyncFactory,
         data,

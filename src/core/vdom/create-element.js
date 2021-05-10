@@ -127,7 +127,8 @@ export function _createElement (
         undefined, undefined, context
       )
     } else if ((!data || !data.pre) && isDef(Ctor = resolveAsset(context.$options, 'components', tag))) {
-      // component 已注册的组件名
+      // Ctor 全局Component中已注册的组件名
+      console.log('Ctor: ', Ctor)
       vnode = createComponent(Ctor, data, context, children, tag)
     } else {
       // unknown or unlisted namespaced elements 创建一个未知标签的VNode
