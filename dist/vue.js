@@ -4250,7 +4250,7 @@
   function lifecycleMixin(Vue) {
     // VNode渲染成真实DOM，负责更新页面，是首次渲染、也是后续更新和patch的入口
     Vue.prototype._update = function (vnode, hydrating) {
-      console.log('_update: ', vnode);
+      console.log('._update: ', vnode);
       var vm = this;
       // old
       var prevEl = vm.$el;
@@ -6522,6 +6522,8 @@
   var emptyNode = new VNode('', {}, []);
 
   var hooks = ['create', 'activate', 'update', 'remove', 'destroy'];
+
+  // key 在 diff算法中的意义 ?
 
   function sameVnode (a, b) {
     return (

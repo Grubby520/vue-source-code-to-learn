@@ -68,7 +68,7 @@ export function initLifecycle(vm: Component) {
 export function lifecycleMixin(Vue: Class<Component>) {
   // VNode渲染成真实DOM，负责更新页面，是首次渲染、也是后续更新和patch的入口
   Vue.prototype._update = function (vnode: VNode, hydrating?: boolean) {
-    console.log('_update: ', vnode);
+    console.log('._update: ', vnode);
     const vm: Component = this;
     // old
     const prevEl = vm.$el;

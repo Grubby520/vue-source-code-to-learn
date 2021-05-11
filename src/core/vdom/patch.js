@@ -10,6 +10,16 @@
  * of making flow understand it is not worth it.
  */
 
+/**
+ * 抱头痛哭，泪流满面，菜鸡落泪...
+ * 
+ * 组件更新的过程核心就是新旧 vnode diff，对新旧节点相同以及不同的情况分别做不同的处理：
+ * 新旧节点不同的更新流程是 创建新节点->更新父占位符节点->删除旧节点；
+ * 而新旧节点相同的更新流程是 去获取它们的 children，根据不同情况做不同的更新逻辑。
+ * 最复杂的情况是 新旧节点相同且它们都存在子节点，那么会执行 updateChildren 逻辑，得结合流程图来理解。
+ * 
+ */
+
 import VNode, { cloneVNode } from './vnode'
 import config from '../config'
 import { SSR_ATTR } from 'shared/constants'
@@ -31,6 +41,8 @@ import {
 export const emptyNode = new VNode('', {}, [])
 
 const hooks = ['create', 'activate', 'update', 'remove', 'destroy']
+
+// key 在 diff算法中的意义 ?
 
 function sameVnode (a, b) {
   return (
