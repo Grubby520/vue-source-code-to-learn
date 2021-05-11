@@ -12,6 +12,7 @@ let pending = false;
 
 function flushCallbacks() {
   pending = false;
+  console.log('callbacks: ', callbacks)
   const copies = callbacks.slice(0);
   callbacks.length = 0;
   for (let i = 0; i < copies.length; i++) {
@@ -62,7 +63,7 @@ if (typeof Promise !== "undefined" && isNative(Promise)) {
   (isNative(MutationObserver) ||
     // PhantomJS and iOS 7.x
     MutationObserver.toString() === "[object MutationObserverConstructor]")
-) {
+) { // 其次MutationObserver
   // Use MutationObserver where native Promise is not available,
   // e.g. PhantomJS, iOS7, Android 4.4
   // (#6466 MutationObserver is unreliable in IE11)
@@ -78,7 +79,7 @@ if (typeof Promise !== "undefined" && isNative(Promise)) {
   };
   isUsingMicroTask = true;
 } else if (typeof setImmediate !== "undefined" && isNative(setImmediate)) {
-  // Fallback to setImmediate.
+  // Fallback to setImmediate. MDN - 非标准特性
   // Technically it leverages the (macro) task queue,
   // but it is still a better choice than setTimeout.
   timerFunc = () => {
@@ -126,10 +127,11 @@ export function nextTick(cb?: Function, ctx?: Object) {
      * 3 setImmediate(非标准)该方法用来把一些需要长时间运行的操作放在一个回调函数里，在浏览器完成后面的其他语句后，就立刻执行这个回调函数
      * 4 setTimeout 宏任务
      */
-    timerFunc();
+    timerFunc(); // flush 刷新
   }
   // $flow-disable-line
   if (!cb && typeof Promise !== "undefined") {
+    // 对没有传入cb的兼容处理，可以这样Promise化的调用 this.$nextTick().then(() => {}) 
     return new Promise((resolve) => {
       _resolve = resolve;
     });
