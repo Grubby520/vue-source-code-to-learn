@@ -31,7 +31,7 @@ export default class Watcher {
   id: number;
   deep: boolean;
   user: boolean;
-  lazy: boolean;
+  lazy: boolean; // computed属性改了一版，计算属性默认是懒加载
   sync: boolean;
   dirty: boolean;
   active: boolean;
@@ -63,7 +63,17 @@ export default class Watcher {
     // options
     if (options) {
       // !! 转成boolean值
-      this.deep = !!options.deep;
+      /**
+       * 这里的定义，表明了watcher的4种类型
+       * deep watcher
+       * user watcher 通过vm.$watch创建的 (state.js)
+       * lazy watcher (老版的computed watcher, 归于lazy watch) 不会立即求值（具体实现还没搞透 ? wtf）
+       * sync watcher: 默认在下一个事件循环'tick'中，sync: true 则 this.run()
+       * sync的业务场景：只有当我们需要 watch 的值的变化到执行 watcher 的回调函数是一个同步过程的时候才会去设置该属性为 true。
+       * 当响应式数据发送变化后，触发了 watcher.update()，只是把这个 watcher 推送到一个队列中，在 nextTick 后才会真正执行 watcher 的回调函数。
+       * 而一旦我们设置了 sync，就可以在当前 Tick 中同步执行 watcher 的回调函数.
+       */
+      this.deep = !!options.deep; // 存在性能开销，根据业务场景做调整手段
       this.user = !!options.user;
       this.lazy = !!options.lazy;
       this.sync = !!options.sync;
@@ -100,6 +110,7 @@ export default class Watcher {
           );
       }
     }
+    // computed的初始值是undefined
     this.value = this.lazy ? undefined : this.get(); // new 最终调用this.get()
   }
 
@@ -132,7 +143,7 @@ export default class Watcher {
       // "touch" every property so they are all tracked as
       // dependencies for deep watching
       if (this.deep) {
-        traverse(value); // 开启deep依赖，对象就会递归的evoke getters，每个key都会收集依赖
+        traverse(value); // 开启deep依赖，对象就会递归的evoke getters，每个key都会收集依赖 (e.g. watcher监听a, 当this.a.b改变，也能触发改watcher)
       }
       popTarget();
       this.cleanupDeps(); // 细节：数据依赖收集完成后，清空
@@ -200,6 +211,9 @@ export default class Watcher {
     // ? sync 和 lazy 和 dirty 的逻辑和更新的场景是啥?
     /* istanbul ignore else */
     if (this.lazy) {
+      // In lazy mode, we don't want to perform computations until necessary,
+      // so we simply mark the watcher as dirty. The actual computation is
+      // performed just-in-time in this.evaluate() when the computed property is accessed
       // 像computed懒加载的，将dirty设置为true，可以让computedGetter重新计算computed回调函数的执行结果
       this.dirty = true;
     } else if (this.sync) {

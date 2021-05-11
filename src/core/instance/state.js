@@ -205,6 +205,7 @@ export function getData(data: Function, vm: Component): any {
 
 const computedWatcherOptions = { lazy: true };
 
+// 重点 defineComputed
 function initComputed(vm: Component, computed: Object) {
   // $flow-disable-line
   const watchers = (vm._computedWatchers = Object.create(null)); // extra key: _computedWatchers
@@ -248,6 +249,7 @@ function initComputed(vm: Component, computed: Object) {
   }
 }
 
+// 声明计算属性
 export function defineComputed(
   target: any,
   key: string,
@@ -406,7 +408,7 @@ export function stateMixin(Vue: Class<Component>) {
    * @param {*} expOrFn 属性名
    * @param {*} cb  回调函数
    * @param {*} options 原始对象
-   * @returns unwatchFn函数，用来停止触发回调
+   * @returns unwatchFn函数，用来把自身从watcher列表里移除掉
    */
   Vue.prototype.$watch = function (
     expOrFn: string | Function,
@@ -420,7 +422,7 @@ export function stateMixin(Vue: Class<Component>) {
     }
     options = options || {};
     // ? user是什么 表示是用户watcher还是渲染watcher
-    options.user = true;
+    options.user = true; // 用户自定义的watcher
     const watcher = new Watcher(vm, expOrFn, cb, options);
     // 如果设置immediate为true，立即执行一次回调函数
     if (options.immediate) {
