@@ -219,6 +219,7 @@ export function defineReactive(
         val = newVal;
       }
       childOb = !shallow && observe(newVal); // 让新的值也是响应式
+      console.log('dep.subs: ', dep.subs)
       dep.notify(); // 通知依赖更新
     },
   });

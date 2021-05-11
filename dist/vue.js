@@ -1124,6 +1124,7 @@
           val = newVal;
         }
         childOb = !shallow && observe(newVal); // 让新的值也是响应式
+        console.log('dep.subs: ', dep.subs);
         dep.notify(); // 通知依赖更新
       },
     });
@@ -4573,7 +4574,9 @@
 
   var MAX_UPDATE_COUNT = 100;
 
+  // ! 优化点：并不是每次数据改变都触发watcher的回调，而是先把他们放入一个任务队列里，等到 nextTick 后执行 flushSchedulerQueue
   var queue = [];
+
   var activatedChildren = [];
   var has = {};
   var circular = {};
@@ -4582,7 +4585,9 @@
   var index = 0;
 
   /**
-   * Reset the scheduler's state.
+   * Reset the scheduler's state. 恢复调度者的状态
+   * 把控制流程状态的变量恢复到初始值
+   * 把watcher 队列清空
    */
   function resetSchedulerState() {
     index = queue.length = activatedChildren.length = 0;
@@ -4646,8 +4651,8 @@
     //    its watchers can be skipped.
     /**
      * 刷新队列之前先给队列排序（升序），可以保证：
-     *   1、组件的更新顺序为从父级到子级，因为父组件总是在子组件之前被创建
-     *   2、一个组件的用户 watcher 在其渲染 watcher 之前被执行，因为用户 watcher 先于 渲染 watcher 创建
+     *   1、组件的更新顺序为从父级到子级，因为父组件总是在子组件之前被创建，所以watcher的创建也是先父后子，执行顺序也是先父后子
+     *   2、一个组件的 user watcher 在其 render watcher 之前被执行，因为用户 watcher 先于 渲染 watcher 创建
      *   3、如果一个组件在其父组件的 watcher 执行期间被销毁，则它的 watcher 可以被跳过
      * 排序以后在刷新队列期间新进来的 watcher 也会按顺序放入队列的合适位置
      */
@@ -4742,6 +4747,7 @@
         // 没有处于刷新队列的状态的情况下
         queue.push(watcher);
       } else {
+        // why? 什么场景进来
         // if already flushing, splice the watcher based on its id
         // if already past its id, it will be run next immediately.
         var i = queue.length - 1;
@@ -4931,6 +4937,7 @@
    * Will be called when a dependency changes.
    */
   Watcher.prototype.update = function update () {
+    // ? sync 和 lazy 和 dirty 的逻辑和更新的场景是啥?
     /* istanbul ignore else */
     if (this.lazy) {
       // 像computed懒加载的，将dirty设置为true，可以让computedGetter重新计算computed回调函数的执行结果
@@ -4955,13 +4962,16 @@
    * 3、执行实例化 watcher 时传递的第三个参数，比如用户 watcher 的回调函数
    */
   Watcher.prototype.run = function run () {
+
+    console.log('this.cb: ', this.cb);
+
     if (this.active) {
-      var value = this.get();
+      var value = this.get(); // 获取当前值
       if (
         value !== this.value ||
         // Deep watchers and watchers on Object/Arrays should fire even
         // when the value is the same, because the value may
-        // have mutated.
+        // have mutated. 新旧值不等、新值是对象类型、deep 模式任何一个条件
         isObject(value) ||
         this.deep
       ) {
@@ -4971,7 +4981,7 @@
         if (this.user) {
           // ? 如果是用户 watcher，则执行用户传递的第三个参数 —— 回调函数，参数为 val 和 oldVal
           try {
-            this.cb.call(this.vm, value, oldValue);
+            this.cb.call(this.vm, value, oldValue); // 用户自定义的watcher 可选2个参数：value, oldValue
           } catch (e) {
             handleError(
               e,
@@ -4980,7 +4990,8 @@
             );
           }
         } else {
-          this.cb.call(this.vm, value, oldValue); // 执行回调函数
+          console.log('what watcher? ', this.vm);
+          this.cb.call(this.vm, value, oldValue); // ? renderingWatcher ?
         }
       }
     }

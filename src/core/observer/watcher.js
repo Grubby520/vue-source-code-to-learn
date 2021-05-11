@@ -197,6 +197,7 @@ export default class Watcher {
    * Will be called when a dependency changes.
    */
   update() {
+    // ? sync 和 lazy 和 dirty 的逻辑和更新的场景是啥?
     /* istanbul ignore else */
     if (this.lazy) {
       // 像computed懒加载的，将dirty设置为true，可以让computedGetter重新计算computed回调函数的执行结果
@@ -221,13 +222,16 @@ export default class Watcher {
    *   3、执行实例化 watcher 时传递的第三个参数，比如用户 watcher 的回调函数
    */
   run() {
+
+    console.log('this.cb: ', this.cb)
+
     if (this.active) {
-      const value = this.get();
+      const value = this.get(); // 获取当前值
       if (
         value !== this.value ||
         // Deep watchers and watchers on Object/Arrays should fire even
         // when the value is the same, because the value may
-        // have mutated.
+        // have mutated. 新旧值不等、新值是对象类型、deep 模式任何一个条件
         isObject(value) ||
         this.deep
       ) {
@@ -237,7 +241,7 @@ export default class Watcher {
         if (this.user) {
           // ? 如果是用户 watcher，则执行用户传递的第三个参数 —— 回调函数，参数为 val 和 oldVal
           try {
-            this.cb.call(this.vm, value, oldValue);
+            this.cb.call(this.vm, value, oldValue); // 用户自定义的watcher 可选2个参数：value, oldValue
           } catch (e) {
             handleError(
               e,
@@ -246,7 +250,8 @@ export default class Watcher {
             );
           }
         } else {
-          this.cb.call(this.vm, value, oldValue); // 执行回调函数
+          console.log('what watcher? ', this.vm)
+          this.cb.call(this.vm, value, oldValue); // ? renderingWatcher ?
         }
       }
     }

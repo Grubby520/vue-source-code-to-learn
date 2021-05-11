@@ -8,7 +8,9 @@ import { warn, nextTick, devtools, inBrowser, isIE } from "../util/index";
 
 export const MAX_UPDATE_COUNT = 100;
 
+// ! 优化点：并不是每次数据改变都触发watcher的回调，而是先把他们放入一个任务队列里，等到 nextTick 后执行 flushSchedulerQueue
 const queue: Array<Watcher> = [];
+
 const activatedChildren: Array<Component> = [];
 let has: { [key: number]: ?true } = {};
 let circular: { [key: number]: number } = {};
@@ -17,7 +19,9 @@ let flushing = false;
 let index = 0;
 
 /**
- * Reset the scheduler's state.
+ * Reset the scheduler's state. 恢复调度者的状态
+ * 把控制流程状态的变量恢复到初始值
+ * 把watcher 队列清空
  */
 function resetSchedulerState() {
   index = queue.length = activatedChildren.length = 0;
@@ -81,8 +85,8 @@ function flushSchedulerQueue() {
   //    its watchers can be skipped.
   /**
    * 刷新队列之前先给队列排序（升序），可以保证：
-   *   1、组件的更新顺序为从父级到子级，因为父组件总是在子组件之前被创建
-   *   2、一个组件的用户 watcher 在其渲染 watcher 之前被执行，因为用户 watcher 先于 渲染 watcher 创建
+   *   1、组件的更新顺序为从父级到子级，因为父组件总是在子组件之前被创建，所以watcher的创建也是先父后子，执行顺序也是先父后子
+   *   2、一个组件的 user watcher 在其 render watcher 之前被执行，因为用户 watcher 先于 渲染 watcher 创建
    *   3、如果一个组件在其父组件的 watcher 执行期间被销毁，则它的 watcher 可以被跳过
    * 排序以后在刷新队列期间新进来的 watcher 也会按顺序放入队列的合适位置
    */
@@ -177,6 +181,7 @@ export function queueWatcher(watcher: Watcher) {
       // 没有处于刷新队列的状态的情况下
       queue.push(watcher);
     } else {
+      // why? 什么场景进来
       // if already flushing, splice the watcher based on its id
       // if already past its id, it will be run next immediately.
       let i = queue.length - 1;
