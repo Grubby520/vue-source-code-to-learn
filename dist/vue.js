@@ -499,7 +499,7 @@
   function def(obj, key, val, enumerable) {
     Object.defineProperty(obj, key, {
       value: val,
-      enumerable: !!enumerable, // !! 的妙用(书里也有提到这一点)
+      enumerable: !!enumerable, // !! 的妙用(书里也有提到这一点，出口 normalize)
       writable: true,
       configurable: true,
     });
@@ -881,7 +881,7 @@
    */
 
   var arrayProto = Array.prototype;
-  var arrayMethods = Object.create(arrayProto); // 创建对象，传入的是Array.prototype作为新建对象的原型对象
+  var arrayMethods = Object.create(arrayProto); // 继承, 创建对象，传入的是Array.prototype作为新建对象的原型对象
 
   var methodsToPatch = [
     // 单独给这几个方法打补丁
@@ -901,6 +901,12 @@
     // cache original method
     var original = arrayProto[method];
     // def 就是 Object.defineProperty，拦截 arrayMethods.method 的访问
+    /**
+     * what? 三个入参
+     * 第三个参数 descriptor:
+     * value 该属性对应的值。可以是任何有效的 JavaScript 值（数值，对象，函数等）
+     * 
+     */
     def(arrayMethods, method, function mutator() {
       var args = [], len = arguments.length;
       while ( len-- ) args[ len ] = arguments[ len ];
@@ -919,7 +925,7 @@
           break;
       }
       if (inserted) { ob.observeArray(inserted); } // 给新插入的元素做响应式处理
-      // notify change 通知更新
+      // 最终是在value对应的拦截函数里面去 dep.notify() 派发更新
       ob.dep.notify();
       return result;
     });
@@ -964,6 +970,7 @@
       if (hasProto) {
         protoAugment(value, arrayMethods); // 设置value的__proto__
       } else {
+        // 现代浏览器都会走这
         copyAugment(value, arrayMethods, arrayKeys);
       }
       this.observeArray(value);
@@ -1003,7 +1010,7 @@
    */
   function protoAugment(target, src) {
     /* eslint-disable no-proto */
-    target.__proto__ = src;
+    target.__proto__ = src; // 直接改浏览器的呀，
     /* eslint-enable no-proto */
   }
 
@@ -1031,7 +1038,7 @@
       return;
     }
     var ob;
-    // 判断value对象是否已经attached
+    // 判断value对象是否已经attached, 因为set新增的属性值也会走这里
     if (hasOwn(value, "__ob__") && value.__ob__ instanceof Observer) {
       ob = value.__ob__;
     } else if (
@@ -1078,7 +1085,7 @@
       val = obj[key];
     }
 
-    var childOb = !shallow && observe(val); // ? wtf
+    var childOb = !shallow && observe(val); // ? wtf -> 调用Vue.set -> defineReactive，对新增的val值创建 .__ob__属性 (new Observer())
     Object.defineProperty(obj, key, {
       enumerable: true,
       configurable: true,
@@ -1094,7 +1101,7 @@
          */
         if (Dep.target) {
           dep.depend(); // 收集依赖 Dep.target 已经被赋值成当前 渲染Watcher
-          // ? childOb的作用
+          // ? childOb的作用 -> Vue.set 新增的val
           if (childOb) {
             childOb.dep.depend(); // this.key.childKey 能被触发响应式更新的原因
             if (Array.isArray(value)) {
@@ -1135,6 +1142,9 @@
    * triggers change notification if the property doesn't
    * already exist.
    * 添加不存在的属性，并进行响应式处理
+   * 主干逻辑：
+   * defineReactive()
+   * ob.dep.notify()
    */
   function set(target, key, val) {
     if (
@@ -1147,7 +1157,7 @@
     }
     if (Array.isArray(target) && isValidArrayIndex(key)) {
       target.length = Math.max(target.length, key);
-      target.splice(key, 1, val); // 数组-splice 新增
+      target.splice(key, 1, val); // 数组-splice 新增，这个splice会被拦截，已经不单纯是原生的那个splice
       return val;
     }
     if (key in target && !(key in Object.prototype)) {
@@ -1169,8 +1179,8 @@
       target[key] = val; // 则只添加，不做响应式处理
       return val;
     }
-    defineReactive(ob.value, key, val); // 响应式处理-Object.defineProperty设置getter和setter
-    ob.dep.notify(); // 遍历watchers，触发watcher.update()
+    defineReactive(ob.value, key, val); // 响应式处理-Object.defineProperty设置getter和setter，即为把新添加的属性变成响应式对象
+    ob.dep.notify(); // 遍历watchers，触发watcher.update(),重新收集watcher依赖
     return val;
   }
 
@@ -2269,7 +2279,7 @@
 
   /*  */
 
-  var seenObjects = new _Set();
+  var seenObjects = new _Set(); // new caches to set dep.id
 
   /**
    * Recursively traverse an object to evoke all converted
@@ -2296,11 +2306,11 @@
     }
     if (isA) {
       i = val.length;
-      while (i--) { _traverse(val[i], seen); }
+      while (i--) { _traverse(val[i], seen); } // 处理 Array
     } else {
       keys = Object.keys(val);
       i = keys.length;
-      while (i--) { _traverse(val[keys[i]], seen); }
+      while (i--) { _traverse(val[keys[i]], seen); } // 处理 Object
     }
   }
 

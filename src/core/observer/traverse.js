@@ -4,7 +4,7 @@ import { _Set as Set, isObject } from '../util/index'
 import type { SimpleSet } from '../util/index'
 import VNode from '../vdom/vnode'
 
-const seenObjects = new Set()
+const seenObjects = new Set() // new caches to set dep.id
 
 /**
  * Recursively traverse an object to evoke all converted
@@ -31,10 +31,10 @@ function _traverse (val: any, seen: SimpleSet) {
   }
   if (isA) {
     i = val.length
-    while (i--) _traverse(val[i], seen)
+    while (i--) _traverse(val[i], seen) // 处理 Array
   } else {
     keys = Object.keys(val)
     i = keys.length
-    while (i--) _traverse(val[keys[i]], seen)
+    while (i--) _traverse(val[keys[i]], seen) // 处理 Object
   }
 }

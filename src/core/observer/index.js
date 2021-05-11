@@ -58,6 +58,7 @@ export class Observer {
       if (hasProto) {
         protoAugment(value, arrayMethods); // 设置value的__proto__
       } else {
+        // 现代浏览器都会走这
         copyAugment(value, arrayMethods, arrayKeys);
       }
       this.observeArray(value);
@@ -98,7 +99,7 @@ export class Observer {
  */
 function protoAugment(target, src: Object) {
   /* eslint-disable no-proto */
-  target.__proto__ = src;
+  target.__proto__ = src; // 直接改浏览器的呀，
   /* eslint-enable no-proto */
 }
 
@@ -126,7 +127,7 @@ export function observe(value: any, asRootData: ?boolean): Observer | void {
     return;
   }
   let ob: Observer | void;
-  // 判断value对象是否已经attached
+  // 判断value对象是否已经attached, 因为set新增的属性值也会走这里
   if (hasOwn(value, "__ob__") && value.__ob__ instanceof Observer) {
     ob = value.__ob__;
   } else if (
@@ -173,7 +174,7 @@ export function defineReactive(
     val = obj[key];
   }
 
-  let childOb = !shallow && observe(val); // ? wtf
+  let childOb = !shallow && observe(val); // ? wtf -> 调用Vue.set -> defineReactive，对新增的val值创建 .__ob__属性 (new Observer())
   Object.defineProperty(obj, key, {
     enumerable: true,
     configurable: true,
@@ -189,7 +190,7 @@ export function defineReactive(
        */
       if (Dep.target) {
         dep.depend(); // 收集依赖 Dep.target 已经被赋值成当前 渲染Watcher
-        // ? childOb的作用
+        // ? childOb的作用 -> Vue.set 新增的val
         if (childOb) {
           childOb.dep.depend(); // this.key.childKey 能被触发响应式更新的原因
           if (Array.isArray(value)) {
@@ -230,6 +231,9 @@ export function defineReactive(
  * triggers change notification if the property doesn't
  * already exist.
  * 添加不存在的属性，并进行响应式处理
+ * 主干逻辑：
+ * defineReactive()
+ * ob.dep.notify()
  */
 export function set(target: Array<any> | Object, key: any, val: any): any {
   if (
@@ -242,7 +246,7 @@ export function set(target: Array<any> | Object, key: any, val: any): any {
   }
   if (Array.isArray(target) && isValidArrayIndex(key)) {
     target.length = Math.max(target.length, key);
-    target.splice(key, 1, val); // 数组-splice 新增
+    target.splice(key, 1, val); // 数组-splice 新增，这个splice会被拦截，已经不单纯是原生的那个splice
     return val;
   }
   if (key in target && !(key in Object.prototype)) {
@@ -264,8 +268,8 @@ export function set(target: Array<any> | Object, key: any, val: any): any {
     target[key] = val; // 则只添加，不做响应式处理
     return val;
   }
-  defineReactive(ob.value, key, val); // 响应式处理-Object.defineProperty设置getter和setter
-  ob.dep.notify(); // 遍历watchers，触发watcher.update()
+  defineReactive(ob.value, key, val); // 响应式处理-Object.defineProperty设置getter和setter，即为把新添加的属性变成响应式对象
+  ob.dep.notify(); // 遍历watchers，触发watcher.update(),重新收集watcher依赖
   return val;
 }
 
