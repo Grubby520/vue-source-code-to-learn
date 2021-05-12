@@ -311,7 +311,7 @@ export function updateChildComponent(
   vm.$attrs = parentVnode.data.attrs || emptyObject;
   vm.$listeners = listeners || emptyObject;
 
-  // update props
+  // update props, propsData 是父组件传递的 props 数据，vm 是子组件的实例
   if (propsData && vm.$options.props) {
     toggleObserving(false);
     const props = vm._props;

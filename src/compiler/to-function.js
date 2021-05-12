@@ -21,11 +21,17 @@ function createFunction (code, errors) {
 export function createCompileToFunctionFn (compile: Function): Function {
   const cache = Object.create(null)
 
+  /**
+   * 最终暴露的3个参数
+   */
   return function compileToFunctions (
-    template: string,
-    options?: CompilerOptions,
-    vm?: Component
+    template: string, // 编译模板
+    options?: CompilerOptions, // 编译配置项
+    vm?: Component // Vue实例
   ): CompiledFunctionResult {
+
+    console.log('compileToFunctions: ', template, options, vm)
+
     options = extend({}, options)
     const warn = options.warn || baseWarn
     delete options.warn

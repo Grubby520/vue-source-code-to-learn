@@ -1531,6 +1531,9 @@
   /**
    * Ensure all props option syntax are normalized into the
    * Object-based format.
+   * 确保所有props选项语法都规范化为基于对象的格式。
+   * 使用角度：可以是数组 ['title', 'likes']，是对象 {title: String, likes: Number} 
+   * 建议：从实现原理上看，推荐以对象形式使用
    */
   function normalizeProps(options, vm) {
     var props = options.props;
@@ -1541,7 +1544,7 @@
       i = props.length;
       while (i--) {
         val = props[i];
-        if (typeof val === "string") {
+        if (typeof val === "string") { // 数组的下标值只能是 string 类型
           name = camelize(val);
           res[name] = { type: null };
         } else {
@@ -1552,7 +1555,7 @@
       for (var key in props) {
         val = props[key];
         name = camelize(key);
-        res[name] = isPlainObject(val) ? val : { type: val };
+        res[name] = isPlainObject(val) ? val : { type: val }; // 值类型为对象 | 是字符串，就是类型
       }
     } else {
       warn(
@@ -1719,6 +1722,10 @@
 
 
 
+  /**
+   * 3件事：处理boolean类型的数据；处理 default 数据；assert 断言。
+   * @returns 
+   */
   function validateProp (
     key,
     propOptions,
@@ -1729,7 +1736,7 @@
     var absent = !hasOwn(propsData, key);
     var value = propsData[key];
     // boolean casting
-    var booleanIndex = getTypeIndex(Boolean, prop.type);
+    var booleanIndex = getTypeIndex(Boolean, prop.type); // title: 'String' | title: ['String', 'Number']
     if (booleanIndex > -1) {
       if (absent && !hasOwn(prop, 'default')) {
         value = false;
@@ -1764,11 +1771,12 @@
   function getPropDefaultValue (vm, prop, key) {
     // no default, return undefined
     if (!hasOwn(prop, 'default')) {
-      return undefined
+      return undefined // 没有 default 属性，默认值为 undefined
     }
     var def = prop.default;
     // warn against non-factory defaults for Object & Array
     if ( isObject(def)) {
+      // prop的类型为对象的话，默认值必须是一个工厂函数 factory function.
       warn(
         'Invalid default value for prop "' + key + '": ' +
         'Props with type Object/Array must use a factory function ' +
@@ -1777,7 +1785,7 @@
       );
     }
     // the raw prop value was also undefined from previous render,
-    // return previous default value to avoid unnecessary watcher trigger
+    // return previous default value to avoid unnecessary watcher trigger 避免触发不必要的 watcher 更新
     if (vm && vm.$options.propsData &&
       vm.$options.propsData[key] === undefined &&
       vm._props[key] !== undefined
@@ -1785,14 +1793,17 @@
       return vm._props[key]
     }
     // call factory function for non-Function types
-    // a value is Function if its prototype is function even across different execution context
+    // a value is Function if its prototype is function even across different execution context 一般不会这样骚操作吧...
     return typeof def === 'function' && getType(prop.type) !== 'Function'
-      ? def.call(vm)
-      : def
+      ? def.call(vm) // 返回工厂函数的值
+      : def // 否则返回 def
   }
 
   /**
    * Assert whether a prop is valid.
+   * Prop 验证 
+   * required: true
+   * validator: function(value) {}
    */
   function assertProp (
     prop,
@@ -3438,7 +3449,7 @@
       transformModel(Ctor.options, data);
     }
 
-    // extract props
+    // extract props 从data里提取propsData
     var propsData = extractPropsFromVNodeData(data, Ctor, tag);
 
     // functional component
@@ -3476,7 +3487,7 @@
     var vnode = new VNode(
       ("vue-component-" + (Ctor.cid) + (name ? ("-" + name) : '')),
       data, undefined, undefined, undefined, context,
-      { Ctor: Ctor, propsData: propsData, listeners: listeners, tag: tag, children: children },
+      { Ctor: Ctor, propsData: propsData, listeners: listeners, tag: tag, children: children }, // 传入 propsData
       asyncFactory
     );
 
@@ -4493,7 +4504,7 @@
     vm.$attrs = parentVnode.data.attrs || emptyObject;
     vm.$listeners = listeners || emptyObject;
 
-    // update props
+    // update props, propsData 是父组件传递的 props 数据，vm 是子组件的实例
     if (propsData && vm.$options.props) {
       toggleObserving(false);
       var props = vm._props;
@@ -5135,7 +5146,7 @@
   }
 
   function initProps(vm, propsOptions) {
-    var propsData = vm.$options.propsData || {};
+    var propsData = vm.$options.propsData || {}; // ? propsData 父组件传递的 prop 数据
     var props = (vm._props = {});
     // cache prop keys so that future props updates can iterate using Array
     // instead of dynamic object key enumeration.
@@ -7041,7 +7052,7 @@
 
       var i;
       var data = vnode.data;
-      if (isDef(data) && isDef(i = data.hook) && isDef(i = i.prepatch)) {
+      if (isDef(data) && isDef(i = data.hook) && isDef(i = i.prepatch)) { // prepatch
         i(oldVnode, vnode);
       }
 
@@ -11378,6 +11389,10 @@
   var genStaticKeysCached = cached(genStaticKeys$1);
 
   /**
+   * 为什么要有优化过程，因为我们知道 Vue 是数据驱动，是响应式的，
+   * 但是我们的模板并不是所有数据都是响应式的，也有很多数据是首次渲染后就永远不会变化的，
+   * 那么这部分数据生成的 DOM 也不会变化，我们可以在 patch 的过程跳过对他们的比对
+   * 
    * Goal of the optimizer: walk the generated template AST tree
    * and detect sub-trees that are purely static, i.e. parts of
    * the DOM that never needs to change.
@@ -12433,11 +12448,17 @@
   function createCompileToFunctionFn (compile) {
     var cache = Object.create(null);
 
+    /**
+     * 最终暴露的3个参数
+     */
     return function compileToFunctions (
-      template,
-      options,
-      vm
+      template, // 编译模板
+      options, // 编译配置项
+      vm // Vue实例
     ) {
+
+      console.log('compileToFunctions: ', template, options, vm);
+
       options = extend({}, options);
       var warn$1 = options.warn || warn;
       delete options.warn;
@@ -12532,8 +12553,11 @@
 
   /*  */
 
+  // 函数式编程
   function createCompilerCreator (baseCompile) {
+    
     return function createCompiler (baseOptions) {
+      // 处理配置参数baseOptions; 执行baseCompile
       function compile (
         template,
         options
@@ -12586,7 +12610,12 @@
 
         finalOptions.warn = warn;
 
+        console.log('finalOptions: ', finalOptions);
+
         var compiled = baseCompile(template.trim(), finalOptions);
+
+        console.log('compiled: ', compiled);
+
         {
           detectErrors(compiled.ast, warn);
         }
@@ -12607,15 +12636,17 @@
   // `createCompilerCreator` allows creating compilers that use alternative
   // parser/optimizer/codegen, e.g the SSR optimizing compiler.
   // Here we just export a default compiler using the default parts.
+  // 可选择: parser, optimizer, codegen
+  // baseCompile 的定义
   var createCompiler = createCompilerCreator(function baseCompile (
     template,
     options
   ) {
-    var ast = parse(template.trim(), options);
+    var ast = parse(template.trim(), options); // 模板字符串生成AST
     if (options.optimize !== false) {
-      optimize(ast, options);
+      optimize(ast, options); // 优化语法树
     }
-    var code = generate(ast, options);
+    var code = generate(ast, options); // render, staticRenderFns
     return {
       ast: ast,
       render: code.render,
@@ -12625,6 +12656,17 @@
 
   /*  */
 
+  /**
+   * 编译入口逻辑之所以这么绕，
+   * 是因为 Vue.js 在不同的平台下都会有编译的过程，
+   * 因此编译过程中的依赖的配置 baseOptions 会有所不同。
+   * 而编译过程会多次执行，但这同一个平台下每一次的编译过程配置又是相同的，
+   * 为了不让这些配置在每次编译过程都通过参数传入，
+   * Vue.js 利用了函数柯里化的技巧很好的实现了 baseOptions 的参数保留
+   * 
+   * compile已经把baseOptions处理之后的结果缓存下来了
+   * 
+   */
   var ref$1 = createCompiler(baseOptions);
   var compileToFunctions = ref$1.compileToFunctions;
 

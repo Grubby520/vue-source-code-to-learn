@@ -18,6 +18,10 @@ type PropOptions = {
   validator: ?Function
 };
 
+/**
+ * 3件事：处理boolean类型的数据；处理 default 数据；assert 断言。
+ * @returns 
+ */
 export function validateProp (
   key: string,
   propOptions: Object,
@@ -28,7 +32,7 @@ export function validateProp (
   const absent = !hasOwn(propsData, key)
   let value = propsData[key]
   // boolean casting
-  const booleanIndex = getTypeIndex(Boolean, prop.type)
+  const booleanIndex = getTypeIndex(Boolean, prop.type) // title: 'String' | title: ['String', 'Number']
   if (booleanIndex > -1) {
     if (absent && !hasOwn(prop, 'default')) {
       value = false
@@ -67,11 +71,12 @@ export function validateProp (
 function getPropDefaultValue (vm: ?Component, prop: PropOptions, key: string): any {
   // no default, return undefined
   if (!hasOwn(prop, 'default')) {
-    return undefined
+    return undefined // 没有 default 属性，默认值为 undefined
   }
   const def = prop.default
   // warn against non-factory defaults for Object & Array
   if (process.env.NODE_ENV !== 'production' && isObject(def)) {
+    // prop的类型为对象的话，默认值必须是一个工厂函数 factory function.
     warn(
       'Invalid default value for prop "' + key + '": ' +
       'Props with type Object/Array must use a factory function ' +
@@ -80,7 +85,7 @@ function getPropDefaultValue (vm: ?Component, prop: PropOptions, key: string): a
     )
   }
   // the raw prop value was also undefined from previous render,
-  // return previous default value to avoid unnecessary watcher trigger
+  // return previous default value to avoid unnecessary watcher trigger 避免触发不必要的 watcher 更新
   if (vm && vm.$options.propsData &&
     vm.$options.propsData[key] === undefined &&
     vm._props[key] !== undefined
@@ -88,14 +93,17 @@ function getPropDefaultValue (vm: ?Component, prop: PropOptions, key: string): a
     return vm._props[key]
   }
   // call factory function for non-Function types
-  // a value is Function if its prototype is function even across different execution context
+  // a value is Function if its prototype is function even across different execution context 一般不会这样骚操作吧...
   return typeof def === 'function' && getType(prop.type) !== 'Function'
-    ? def.call(vm)
-    : def
+    ? def.call(vm) // 返回工厂函数的值
+    : def // 否则返回 def
 }
 
 /**
  * Assert whether a prop is valid.
+ * Prop 验证 
+ * required: true
+ * validator: function(value) {}
  */
 function assertProp (
   prop: PropOptions,

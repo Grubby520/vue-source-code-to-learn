@@ -180,7 +180,7 @@ export function createComponent (
     transformModel(Ctor.options, data)
   }
 
-  // extract props
+  // extract props 从data里提取propsData
   const propsData = extractPropsFromVNodeData(data, Ctor, tag)
 
   // functional component
@@ -218,7 +218,7 @@ export function createComponent (
   const vnode = new VNode(
     `vue-component-${Ctor.cid}${name ? `-${name}` : ''}`,
     data, undefined, undefined, undefined, context,
-    { Ctor, propsData, listeners, tag, children },
+    { Ctor, propsData, listeners, tag, children }, // 传入 propsData
     asyncFactory
   )
 

@@ -90,7 +90,7 @@ export function initState(vm: Component) {
 }
 
 function initProps(vm: Component, propsOptions: Object) {
-  const propsData = vm.$options.propsData || {};
+  const propsData = vm.$options.propsData || {}; // ? propsData 父组件传递的 prop 数据
   const props = (vm._props = {});
   // cache prop keys so that future props updates can iterate using Array
   // instead of dynamic object key enumeration.

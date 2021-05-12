@@ -301,6 +301,9 @@ export function validateComponentName(name: string) {
 /**
  * Ensure all props option syntax are normalized into the
  * Object-based format.
+ * 确保所有props选项语法都规范化为基于对象的格式。
+ * 使用角度：可以是数组 ['title', 'likes']，是对象 {title: String, likes: Number} 
+ * 建议：从实现原理上看，推荐以对象形式使用
  */
 function normalizeProps(options: Object, vm: ?Component) {
   const props = options.props;
@@ -311,7 +314,7 @@ function normalizeProps(options: Object, vm: ?Component) {
     i = props.length;
     while (i--) {
       val = props[i];
-      if (typeof val === "string") {
+      if (typeof val === "string") { // 数组的下标值只能是 string 类型
         name = camelize(val);
         res[name] = { type: null };
       } else if (process.env.NODE_ENV !== "production") {
@@ -322,7 +325,7 @@ function normalizeProps(options: Object, vm: ?Component) {
     for (const key in props) {
       val = props[key];
       name = camelize(key);
-      res[name] = isPlainObject(val) ? val : { type: val };
+      res[name] = isPlainObject(val) ? val : { type: val }; // 值类型为对象 | 是字符串，就是类型
     }
   } else if (process.env.NODE_ENV !== "production") {
     warn(

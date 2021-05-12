@@ -4,8 +4,11 @@ import { extend } from 'shared/util'
 import { detectErrors } from './error-detector'
 import { createCompileToFunctionFn } from './to-function'
 
+// 函数式编程
 export function createCompilerCreator (baseCompile: Function): Function {
+  
   return function createCompiler (baseOptions: CompilerOptions) {
+    // 处理配置参数baseOptions; 执行baseCompile
     function compile (
       template: string,
       options?: CompilerOptions
@@ -58,7 +61,12 @@ export function createCompilerCreator (baseCompile: Function): Function {
 
       finalOptions.warn = warn
 
+      console.log('finalOptions: ', finalOptions)
+
       const compiled = baseCompile(template.trim(), finalOptions)
+
+      console.log('compiled: ', compiled)
+
       if (process.env.NODE_ENV !== 'production') {
         detectErrors(compiled.ast, warn)
       }
