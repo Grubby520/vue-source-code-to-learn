@@ -40,6 +40,12 @@ export type CodegenResult = {
   staticRenderFns: Array<string>
 };
 
+/**
+ * 复杂又抽象的逻辑如何理解：写一个最小单元的template，一路debugger，通关一个分支。再一层叠一层，最终搭起一栋高楼。
+ * @param {*} ast 
+ * @param {*} options 
+ * @returns 
+ */
 export function generate (
   ast: ASTElement | void,
   options: CompilerOptions
@@ -53,11 +59,14 @@ export function generate (
   }
 }
 
+// 基本就是判断当前 AST 元素节点的属性执行不同的代码生成函数
 export function genElement (el: ASTElement, state: CodegenState): string {
   if (el.parent) {
     el.pre = el.pre || el.parent.pre
   }
 
+  // 生成element不过n个方法而已 genStatic, genOnce, genFor, genIf, genChildren, genSlot, genComponent, genData, genText ...
+  // e.g. 以绑定click事件为例，通关实现的完整分支流程。
   if (el.staticRoot && !el.staticProcessed) {
     return genStatic(el, state)
   } else if (el.once && !el.onceProcessed) {
@@ -143,6 +152,15 @@ function genOnce (el: ASTElement, state: CodegenState): string {
   }
 }
 
+/**
+ * genIf 主要是通过执行 genIfConditions，
+ * 它是依次从 conditions 获取第一个 condition，
+ * 然后通过对 condition.exp 去生成一段三元运算符的代码，
+ * 最后是递归调用 genIfConditions，
+ * 这样如果有多个 conditions，就生成多层三元运算逻辑。
+ * 这里我们暂时不考虑 v-once 的情况，所以 genTernaryExp 最终是调用了 genElement
+ * @returns 
+ */
 export function genIf (
   el: any,
   state: CodegenState,
@@ -184,6 +202,7 @@ function genIfConditions (
   }
 }
 
+// 首先 AST 元素节点中获取了和 for 相关的一些属性，然后返回了一个代码字符串
 export function genFor (
   el: any,
   state: CodegenState,

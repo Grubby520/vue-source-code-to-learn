@@ -17,8 +17,14 @@ export const createCompiler = createCompilerCreator(function baseCompile (
   const ast = parse(template.trim(), options) // 模板字符串生成AST
   if (options.optimize !== false) {
     optimize(ast, options) // 优化语法树
+
+    console.log('ast: ', ast)
+
   }
   const code = generate(ast, options) // render, staticRenderFns
+
+  console.log('code.render: ', code.render)
+  
   return {
     ast,
     render: code.render,

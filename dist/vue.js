@@ -3137,6 +3137,10 @@
 
   /*  */
 
+  /**
+   * render过程的辅助函数 17个, wtf
+   * ._c = createElement, 定义在 instance/render.js, wtf
+   */
   function installRenderHelpers (target) {
     target._o = markOnce;
     target._n = toNumber;
@@ -11391,7 +11395,13 @@
   /**
    * 为什么要有优化过程，因为我们知道 Vue 是数据驱动，是响应式的，
    * 但是我们的模板并不是所有数据都是响应式的，也有很多数据是首次渲染后就永远不会变化的，
-   * 那么这部分数据生成的 DOM 也不会变化，我们可以在 patch 的过程跳过对他们的比对
+   * 那么这部分数据生成的 DOM 也不会变化，我们可以在 patch 的过程跳过对他们的比对.
+   * 
+   * 那么至此我们分析完了 optimize 的过程，就是深度遍历这个 AST 树，
+   * 去检测它的每一颗子树是不是静态节点，如果是静态节点则它们生成 DOM 永远不需要改变，
+   * 这对运行时对模板的更新起到极大的优化作用。
+     我们通过 optimize 我们把整个 AST 树中的每一个 AST 元素节点标记了 static 和 staticRoot，
+     它会影响我们接下来执行代码生成的过程
    * 
    * Goal of the optimizer: walk the generated template AST tree
    * and detect sub-trees that are purely static, i.e. parts of
@@ -11407,9 +11417,9 @@
     if (!root) { return }
     isStaticKey = genStaticKeysCached(options.staticKeys || '');
     isPlatformReservedTag = options.isReservedTag || no;
-    // first pass: mark all non-static nodes.
+    // first pass: mark all non-static nodes. 标记静态节点
     markStatic$1(root);
-    // second pass: mark static roots.
+    // second pass: mark static roots. 标记静态根ast
     markStaticRoots(root, false);
   }
 
@@ -11452,6 +11462,14 @@
     }
   }
 
+  /**
+   * markStaticRoots 第二个参数是 isInFor，对于已经是 static 的节点或者是 v-once 指令的节点，node.staticInFor = isInFor。 接着就是对于 staticRoot 的判断逻辑，从注释中我们可以看到，对于有资格成为 staticRoot 的节点，除了本身是一个静态节点外，必须满足拥有 children，并且 children 不能只是一个文本节点，不然的话把它标记成静态根节点的收益就很小了。
+
+  接下来和标记静态节点的逻辑一样，遍历 children 以及 ifConditions，递归执行 markStaticRoots
+   * @param {*} node 
+   * @param {*} isInFor 
+   * @returns 
+   */
   function markStaticRoots (node, isInFor) {
     if (node.type === 1) {
       if (node.static || node.once) {
@@ -11482,20 +11500,29 @@
     }
   }
 
+  /**
+   * 
+   */
   function isStatic (node) {
-    if (node.type === 2) { // expression
+    if (node.type === 2) { // expression 表达式
       return false
     }
-    if (node.type === 3) { // text
+    if (node.type === 3) { // text 纯文本
       return true
     }
+    /**
+     * v-pre 不需要表达式 跳过这个元素和其子元素的编译过程 (静态)
+     * v-if 
+     * v-for
+     * tag
+     */
     return !!(node.pre || (
       !node.hasBindings && // no dynamic bindings
       !node.if && !node.for && // not v-if or v-for or v-else
       !isBuiltInTag(node.tag) && // not a built-in
-      isPlatformReservedTag(node.tag) && // not a component
-      !isDirectChildOfTemplateFor(node) &&
-      Object.keys(node).every(isStaticKey)
+      isPlatformReservedTag(node.tag) && // not a component 非内置组件
+      !isDirectChildOfTemplateFor(node) && // 带有 v-for 的 template 标签的直接子节点
+      Object.keys(node).every(isStaticKey) // 节点的所有key都是静态的key
     ))
   }
 
@@ -11721,6 +11748,12 @@
 
 
 
+  /**
+   * 复杂又抽象的逻辑如何理解：写一个最小单元的template，一路debugger，通关一个分支。再一层叠一层，最终搭起一栋高楼。
+   * @param {*} ast 
+   * @param {*} options 
+   * @returns 
+   */
   function generate (
     ast,
     options
@@ -11734,11 +11767,14 @@
     }
   }
 
+  // 基本就是判断当前 AST 元素节点的属性执行不同的代码生成函数
   function genElement (el, state) {
     if (el.parent) {
       el.pre = el.pre || el.parent.pre;
     }
 
+    // 生成element不过n个方法而已 genStatic, genOnce, genFor, genIf, genChildren, genSlot, genComponent, genData, genText ...
+    // e.g. 以绑定click事件为例，通关实现的完整分支流程。
     if (el.staticRoot && !el.staticProcessed) {
       return genStatic(el, state)
     } else if (el.once && !el.onceProcessed) {
@@ -11816,6 +11852,15 @@
     }
   }
 
+  /**
+   * genIf 主要是通过执行 genIfConditions，
+   * 它是依次从 conditions 获取第一个 condition，
+   * 然后通过对 condition.exp 去生成一段三元运算符的代码，
+   * 最后是递归调用 genIfConditions，
+   * 这样如果有多个 conditions，就生成多层三元运算逻辑。
+   * 这里我们暂时不考虑 v-once 的情况，所以 genTernaryExp 最终是调用了 genElement
+   * @returns 
+   */
   function genIf (
     el,
     state,
@@ -11853,6 +11898,7 @@
     }
   }
 
+  // 首先 AST 元素节点中获取了和 for 相关的一些属性，然后返回了一个代码字符串
   function genFor (
     el,
     state,
@@ -12645,8 +12691,14 @@
     var ast = parse(template.trim(), options); // 模板字符串生成AST
     if (options.optimize !== false) {
       optimize(ast, options); // 优化语法树
+
+      console.log('ast: ', ast);
+
     }
     var code = generate(ast, options); // render, staticRenderFns
+
+    console.log('code.render: ', code.render);
+    
     return {
       ast: ast,
       render: code.render,

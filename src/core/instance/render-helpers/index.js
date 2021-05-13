@@ -12,6 +12,10 @@ import { bindObjectListeners } from './bind-object-listeners'
 import { resolveScopedSlots } from './resolve-scoped-slots'
 import { bindDynamicKeys, prependModifier } from './bind-dynamic-keys'
 
+/**
+ * render过程的辅助函数 17个, wtf
+ * ._c = createElement, 定义在 instance/render.js, wtf
+ */
 export function installRenderHelpers (target: any) {
   target._o = markOnce
   target._n = toNumber
