@@ -72,6 +72,15 @@ Vue.prototype.$mount = function (
         mark("compile");
       }
       // 入口 compileToFunctions
+      /**
+       * compileToFunctions()
+       * createCompileToFunctionFn() @returns compileToFunctions -> compile()
+       *   <- createCompilerCreator() @returns createCompiler() @returns compile
+       *     -> baseCompile() -> 
+       *        1. parse() 模板字符串生成ast, 
+       *        2. optimize() 优化语法树 [ markStatic, markStaticRoots ], 
+       *        3. generate() @returns {render, staticRenderFns }
+       */
       const { render, staticRenderFns } = compileToFunctions(
         template,
         {
@@ -111,6 +120,7 @@ function getOuterHTML(el: Element): string {
   }
 }
 
+// key point
 Vue.compile = compileToFunctions;
 
 export default Vue; // 最终的Vue

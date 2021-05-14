@@ -66,6 +66,11 @@ function prependModifierMarker (symbol: string, name: string, dynamic?: boolean)
     : symbol + name // mark the event as captured
 }
 
+/**
+ * 根据 modifier 修饰符对事件名 name 做处理，
+ * 接着根据 modifier.native 判断是一个纯原生事件还是普通事件，分别对应 el.nativeEvents 和 el.events，
+ * 最后按照 name 对事件做归类，并把回调函数的字符串保留到对应的事件中
+ */
 export function addHandler (
   el: ASTElement,
   name: string,

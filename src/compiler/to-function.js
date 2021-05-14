@@ -62,7 +62,7 @@ export function createCompileToFunctionFn (compile: Function): Function {
       return cache[key]
     }
 
-    // compile
+    // compile step
     const compiled = compile(template, options)
 
     // check compilation errors/tips

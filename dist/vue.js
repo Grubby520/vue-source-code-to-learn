@@ -3744,7 +3744,7 @@
     // bind the createElement fn to this instance
     // so that we get proper render context inside it.
     // args order: tag, data, children, normalizationType, alwaysNormalize
-    // internal version is used by render functions compiled from templates
+    // internal version is used by render f\unctions compiled from templates
     // 模板convert成render函数时使用
     vm._c = function (a, b, c, d) { return createElement(vm, a, b, c, d, false); };
     // normalization is always applied for the public version, used in
@@ -7756,6 +7756,11 @@
       : symbol + name // mark the event as captured
   }
 
+  /**
+   * 根据 modifier 修饰符对事件名 name 做处理，
+   * 接着根据 modifier.native 判断是一个纯原生事件还是普通事件，分别对应 el.nativeEvents 和 el.events，
+   * 最后按照 name 对事件做归类，并把回调函数的字符串保留到对应的事件中
+   */
   function addHandler (
     el,
     name,
@@ -8319,6 +8324,7 @@
         }
       };
     }
+    // 最终执行 EventTarget.addEventListener
     target$1.addEventListener(
       name,
       handler,
@@ -8334,6 +8340,7 @@
     capture,
     _target
   ) {
+    // 最终执行 EventTarget.removeEventListener
     (_target || target$1).removeEventListener(
       name,
       handler._wrapper || handler,
@@ -11055,7 +11062,10 @@
   }
 
   function processAttrs (el) {
-    var list = el.attrsList;
+    
+    console.log('astElement: ', el);
+    
+    var list = el.attrsList; // 解析指令的类型：directive, event, 
     var i, l, name, rawName, value, modifiers, syncGen, isDynamic;
     for (i = 0, l = list.length; i < l; i++) {
       name = rawName = list[i].name;
@@ -11143,6 +11153,7 @@
           if (isDynamic) {
             name = name.slice(1, -1);
           }
+          // 事件指令
           addHandler(el, name, value, modifiers, false, warn$2, list[i], isDynamic);
         } else { // normal directives
           name = name.replace(dirRE, '');
@@ -11393,6 +11404,7 @@
   var genStaticKeysCached = cached(genStaticKeys$1);
 
   /**
+   * 
    * 为什么要有优化过程，因为我们知道 Vue 是数据驱动，是响应式的，
    * 但是我们的模板并不是所有数据都是响应式的，也有很多数据是首次渲染后就永远不会变化的，
    * 那么这部分数据生成的 DOM 也不会变化，我们可以在 patch 的过程跳过对他们的比对.
@@ -11593,6 +11605,7 @@
     right: genGuard("'button' in $event && $event.button !== 2")
   };
 
+
   function genHandlers (
     events,
     isNative
@@ -11600,7 +11613,7 @@
     var prefix = isNative ? 'nativeOn:' : 'on:';
     var staticHandlers = "";
     var dynamicHandlers = "";
-    for (var name in events) {
+    for (var name in events) { // 1.遍历事件对象events
       var handlerCode = genHandler(events[name]);
       if (events[name] && events[name].dynamic) {
         dynamicHandlers += name + "," + handlerCode + ",";
@@ -11932,6 +11945,9 @@
       '})'
   }
 
+  /**
+   * 分支1：attr类型为v-on定义的event事件；
+   */
   function genData$2 (el, state) {
     var data = '{';
 
@@ -11971,11 +11987,11 @@
     if (el.props) {
       data += "domProps:" + (genProps(el.props)) + ",";
     }
-    // event handlers
+    // event handlers 自定义的事件
     if (el.events) {
       data += (genHandlers(el.events, false)) + ",";
     }
-    if (el.nativeEvents) {
+    if (el.nativeEvents) { // 原生事件
       data += (genHandlers(el.nativeEvents, true)) + ",";
     }
     // slot target
@@ -12535,7 +12551,7 @@
         return cache[key]
       }
 
-      // compile
+      // compile step
       var compiled = compile(template, options);
 
       // check compilation errors/tips
@@ -12799,6 +12815,15 @@
           mark("compile");
         }
         // 入口 compileToFunctions
+        /**
+         * compileToFunctions()
+         * createCompileToFunctionFn() @returns compileToFunctions -> compile()
+         *   <- createCompilerCreator() @returns createCompiler() @returns compile
+         *     -> baseCompile() -> 
+         *        1. parse() 模板字符串生成ast, 
+         *        2. optimize() 优化语法树 [ markStatic, markStaticRoots ], 
+         *        3. generate() @returns {render, staticRenderFns }
+         */
         var ref = compileToFunctions(
           template,
           {
@@ -12840,6 +12865,7 @@
     }
   }
 
+  // key point
   Vue.compile = compileToFunctions;
 
   return Vue;

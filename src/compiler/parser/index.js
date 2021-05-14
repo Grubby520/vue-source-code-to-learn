@@ -756,7 +756,10 @@ function processComponent (el) {
 }
 
 function processAttrs (el) {
-  const list = el.attrsList
+  
+  console.log('astElement: ', el)
+  
+  const list = el.attrsList // 解析指令的类型：directive, event, 
   let i, l, name, rawName, value, modifiers, syncGen, isDynamic
   for (i = 0, l = list.length; i < l; i++) {
     name = rawName = list[i].name
@@ -847,6 +850,7 @@ function processAttrs (el) {
         if (isDynamic) {
           name = name.slice(1, -1)
         }
+        // 事件指令
         addHandler(el, name, value, modifiers, false, warn, list[i], isDynamic)
       } else { // normal directives
         name = name.replace(dirRE, '')

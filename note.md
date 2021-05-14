@@ -24,3 +24,7 @@ $ entry-runtime-with-compiler.js
 $mount有一个公共的方法，然后根据环境，对应一个重写方法；
 
 
+### rollup
+
+-w --watch
+-c --config

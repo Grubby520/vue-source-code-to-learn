@@ -27,7 +27,7 @@ export function initRender(vm: Component) {
   // bind the createElement fn to this instance
   // so that we get proper render context inside it.
   // args order: tag, data, children, normalizationType, alwaysNormalize
-  // internal version is used by render functions compiled from templates
+  // internal version is used by render f\unctions compiled from templates
   // 模板convert成render函数时使用
   vm._c = (a, b, c, d) => createElement(vm, a, b, c, d, false);
   // normalization is always applied for the public version, used in

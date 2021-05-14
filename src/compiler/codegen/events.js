@@ -52,6 +52,7 @@ const modifierCode: { [key: string]: string } = {
   right: genGuard(`'button' in $event && $event.button !== 2`)
 }
 
+
 export function genHandlers (
   events: ASTElementHandlers,
   isNative: boolean
@@ -59,7 +60,7 @@ export function genHandlers (
   const prefix = isNative ? 'nativeOn:' : 'on:'
   let staticHandlers = ``
   let dynamicHandlers = ``
-  for (const name in events) {
+  for (const name in events) { // 1.遍历事件对象events
     const handlerCode = genHandler(events[name])
     if (events[name] && events[name].dynamic) {
       dynamicHandlers += `${name},${handlerCode},`

@@ -236,6 +236,9 @@ export function genFor (
     '})'
 }
 
+/**
+ * 分支1：attr类型为v-on定义的event事件；
+ */
 export function genData (el: ASTElement, state: CodegenState): string {
   let data = '{'
 
@@ -275,11 +278,11 @@ export function genData (el: ASTElement, state: CodegenState): string {
   if (el.props) {
     data += `domProps:${genProps(el.props)},`
   }
-  // event handlers
+  // event handlers 自定义的事件
   if (el.events) {
     data += `${genHandlers(el.events, false)},`
   }
-  if (el.nativeEvents) {
+  if (el.nativeEvents) { // 原生事件
     data += `${genHandlers(el.nativeEvents, true)},`
   }
   // slot target

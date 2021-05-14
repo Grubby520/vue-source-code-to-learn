@@ -80,6 +80,7 @@ function add (
       }
     }
   }
+  // 最终执行 EventTarget.addEventListener
   target.addEventListener(
     name,
     handler,
@@ -95,6 +96,7 @@ function remove (
   capture: boolean,
   _target?: HTMLElement
 ) {
+  // 最终执行 EventTarget.removeEventListener
   (_target || target).removeEventListener(
     name,
     handler._wrapper || handler,
