@@ -10,6 +10,7 @@ export function initUse(Vue: GlobalAPI) {
    * @param {*} plugin install 方法 或者 包含 install 方法的对象
    * @returns Vue 实例
    */
+  console.info(' --添加 Vue.use')
   Vue.use = function (plugin: Function | Object) {
     // console.log(this);
     const installedPlugins =

@@ -13,7 +13,7 @@ const modules = platformModules.concat(baseModules)
 // nodeOps '平台dom'的一些操作方法
 // modules 平台的一些模块
 const params = { nodeOps, modules }
-console.log(params)
+// console.log(params)
 /**
  * 函数柯里化的技巧和应用场景：
  * 在web和weex环境下，把虚拟dom映射到‘平台dom’的方法是不同的，把代码分散到各个目录的

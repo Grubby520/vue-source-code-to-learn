@@ -1,6 +1,6 @@
 /* @flow */
-//  main entry
-// debugger
+// Level 2
+console.info('Level 2')
 import Vue from 'core/index' // 真正初始化的地方
 import config from 'core/config'
 import { extend, noop } from 'shared/util'
@@ -21,6 +21,7 @@ import platformDirectives from './directives/index'
 import platformComponents from './components/index'
 
 // install platform specific utils
+console.info(' --添加 平台特殊的utils方法 Vue.config.mustUseProp, .isReservedTag, .isReservedAttr, .getTagNamespace, .isUnknownElement')
 Vue.config.mustUseProp = mustUseProp
 Vue.config.isReservedTag = isReservedTag
 Vue.config.isReservedAttr = isReservedAttr
@@ -28,14 +29,20 @@ Vue.config.getTagNamespace = getTagNamespace
 Vue.config.isUnknownElement = isUnknownElement
 
 // install platform runtime directives & components
+console.info(' --添加 平台运行时的指令和组件 Vue.options.directives, .components')
+
+console.info(' --添加 Vue.options.directives: mode, show')
 extend(Vue.options.directives, platformDirectives)
+console.info(' --添加 Vue.options.components: Transition, TransitionGroup')
 extend(Vue.options.components, platformComponents)
 
 // install platform patch function
+console.info(' --添加 Vue.options.__patch__')
 Vue.prototype.__patch__ = inBrowser ? patch : noop // 不需要传参 createPatchFunction => patch
 
 // public mount method
 // 公共的 $mount 定义的地方
+console.info(' --添加 Vue.options.$mount')
 Vue.prototype.$mount = function (
   el?: string | Element,
   hydrating?: boolean

@@ -525,7 +525,6 @@
   }
 
   /*  */
-  // debugger
   // can we use __proto__?
   var hasProto = '__proto__' in {};
 
@@ -1069,7 +1068,6 @@
     customSetter,
     shallow
   ) {
-    // debugger
     var dep = new Dep(); // 一个key，一个Dep实例
 
     var property = Object.getOwnPropertyDescriptor(obj, key);
@@ -1091,7 +1089,6 @@
       configurable: true,
       // 什么时候触发这个getter?
       get: function reactiveGetter() { // 收集依赖
-        // debugger
         var value = getter ? getter.call(obj) : val; // 
         /**
          * Dep.target 为 Dep 类的一个静态属性，值为 watcher，在实例化 Watcher 时会被设置
@@ -1112,7 +1109,6 @@
         return value;
       },
       set: function reactiveSetter(newVal) { // 派发更新
-        // debugger
         var value = getter ? getter.call(obj) : val; // 旧值
         /* eslint-disable no-self-compare */
         if (newVal === value || (newVal !== newVal && value !== value)) {
@@ -1701,7 +1697,6 @@
     if (typeof id !== "string") {
       return;
     }
-    debugger
     var assets = options[type]; // components属性值
     // check local registration variations first
     if (hasOwn(assets, id)) { return assets[id]; } // 值是 name 或者 id
@@ -3782,8 +3777,10 @@
 
   function renderMixin(Vue) {
     // install runtime convenience helpers
+    console.info(' --添加 Vue.prototype 17个render相关的渲染函数  Vue.prototype._o, _n, _s, _l, _t, _q, _i, _m, _f, _k, _b, _v, _e, _u, _g, _d, _p');
     installRenderHelpers(Vue.prototype); // 安装大量和渲染相关的简写的工具函数，用于compiler生成的render fn中
 
+    console.info(' --添加 Vue.prototype.$nextTick');
     Vue.prototype.$nextTick = function (fn) {
       return nextTick(fn, this); // 加入浏览器异步任务队列（插队）
     };
@@ -3792,6 +3789,7 @@
      * 生成VNode的核心函数 _render 
      * 核心：render.call(vm._renderProxy, vm.$createElement)
      */
+    console.info(' --添加 Vue.prototype._render');
     Vue.prototype._render = function () {
       var vm = this;
       var ref = vm.$options;
@@ -3817,7 +3815,6 @@
         // when parent component is patched.
         currentRenderingInstance = vm;
         // question ?
-        // debugger
         vnode = render.call(vm._renderProxy, vm.$createElement); // vm.$options.render 返回vnode
         //       function anonymous(
         // ) {
@@ -4100,6 +4097,7 @@
   function eventsMixin(Vue) {
     var hookRE = /^hook:/;
     // 监听实例上的自定义事件。单个或者数组集合，fn回调，查看 vm._events
+    console.info(' --添加 Vue.prototype.$on');
     Vue.prototype.$on = function (
       event,
       fn
@@ -4123,6 +4121,7 @@
     };
 
     // 只执行一次的设计：对fn进行一次包装，on函数里调用 $off，再执行fn
+    console.info(' --添加 Vue.prototype.$once');
     Vue.prototype.$once = function (event, fn) {
       var vm = this;
       function on() {
@@ -4134,6 +4133,7 @@
       return vm;
     };
 
+    console.info(' --添加 Vue.prototype.$off');
     Vue.prototype.$off = function (
       event,
       fn
@@ -4177,6 +4177,7 @@
     };
 
     // 去 _event中拿到event的fn，依次执行
+    console.info(' --添加 Vue.prototype.$emit');
     Vue.prototype.$emit = function (event) {
       var vm = this;
       {
@@ -4264,6 +4265,7 @@
 
   function lifecycleMixin(Vue) {
     // VNode渲染成真实DOM，负责更新页面，是首次渲染、也是后续更新和patch的入口
+    console.info(' --添加 Vue.prototype._update');
     Vue.prototype._update = function (vnode, hydrating) {
       console.log('._update: ', vnode);
       var vm = this;
@@ -4305,6 +4307,7 @@
     };
 
     // 强制更新
+    console.info(' --添加 Vue.prototype.$forceUpdate');
     Vue.prototype.$forceUpdate = function () {
       var vm = this;
       if (vm._watcher) {
@@ -4314,6 +4317,7 @@
 
     // 内部用的，完全销毁一个实例。清理它与其它实例的连接，解绑它的全部指令及事件监听器
     // 我们顶多用 beforeDestroy destroyed 钩子
+    console.info(' --添加 Vue.prototype.$destroy');
     Vue.prototype.$destroy = function () {
       var vm = this;
       if (vm._isBeingDestroyed) {
@@ -4424,7 +4428,6 @@
     } else {
       updateComponent = function () {
         // question ? -> 什么时候调用的 ? -> 下面new Watcher()  mountComponent调用的时候
-        // debugger
         // 五星级权重代码
         vm._update(vm._render(), hydrating); // _render生成VNode, _update渲染成真实的DOM
         // ._render() 对vm上的响应式数据进行访问，触发对应的getter
@@ -5457,10 +5460,14 @@
       };
     }
     // 将data和props挂载到Vue.prototype上，直接使用this.$data访问data
+    console.info(' --添加 Vue.prototype.$data');
     Object.defineProperty(Vue.prototype, "$data", dataDef);
+    console.info(' --添加 Vue.prototype.$props');
     Object.defineProperty(Vue.prototype, "$props", propsDef);
 
+    console.info(' --添加 Vue.prototype.$set');
     Vue.prototype.$set = set;
+    console.info(' --添加 Vue.prototype.$del');
     Vue.prototype.$delete = del;
 
     /**
@@ -5470,6 +5477,7 @@
      * @param {*} options 原始对象
      * @returns unwatchFn函数，用来把自身从watcher列表里移除掉
      */
+      console.info(' --添加 Vue.prototype.$watch');
     Vue.prototype.$watch = function (
       expOrFn,
       cb,
@@ -5510,6 +5518,7 @@
 
   function initMixin(Vue) {
     // 五星
+    console.info(' --添加 Vue.prototype._init');
     Vue.prototype._init = function (options) {
       var vm = this;
       // a uid
@@ -5729,9 +5738,11 @@
     return modified;
   }
 
-  // debugger
-
+  // Level 4
   // Vue构造函数 - 为啥不用Class?
+  console.info('Level 4');
+  console.info(' 初始化 Vue 开始');
+  console.info(' --定义 Vue 构造函数');
   function Vue(options) {
     if ( !(this instanceof Vue)) {
       warn("Vue is a constructor and should be called with the `new` keyword");
@@ -5748,6 +5759,7 @@
    * Vue.prototype
    * ._init
    */
+  console.info(' 初始化 Vue initMixin');
   initMixin(Vue);
   /** 实例方法 / 【数据】
    * Vue.prototype
@@ -5757,6 +5769,7 @@
    * .$delete
    * .$watch
    */
+  console.info(' 初始化 Vue stateMixin');
   stateMixin(Vue);
   /** 实例方法 / 【事件】
    * Vue.prototype
@@ -5765,6 +5778,7 @@
    * .$off
    * .$emit
    */
+  console.info(' 初始化 Vue eventsMixin');
   eventsMixin(Vue);
   /** 实例方法 / 【生命周期】
    * Vue.prototype
@@ -5772,6 +5786,7 @@
    * .$forceUpdate
    * .$destroy
    */
+  console.info(' 初始化 Vue lifecycleMixin');
   lifecycleMixin(Vue);
   /**
    * Vue.prototype
@@ -5779,6 +5794,7 @@
    * ._render
    * .$nextTick
    */
+  console.info(' 初始化 Vue renderMixin');
   renderMixin(Vue);
 
   /*  */
@@ -5791,6 +5807,7 @@
      * @param {*} plugin install 方法 或者 包含 install 方法的对象
      * @returns Vue 实例
      */
+    console.info(' --添加 Vue.use');
     Vue.use = function (plugin) {
       // console.log(this);
       var installedPlugins =
@@ -5818,6 +5835,7 @@
    * 全局混入选项，会作用域之后创建的vue组件，这些实例会合并全局混入的选项
    */
   function initMixin$1(Vue) {
+    console.info(' --添加 Vue.mixin');
     Vue.mixin = function (mixin) {
       this.options = mergeOptions(this.options, mixin);
       return this;
@@ -5841,6 +5859,7 @@
      * .vue定义的Component 实际文件是 export default {...} 一个普通的Object对象
      * 原型继承：纯对象转换成继承Vue的Sub构造器函数，然后对Sub本身扩展了一些属性
      */
+    console.info(' --添加 Vue.extend');
     Vue.extend = function (extendOptions) {
       console.log(extendOptions);
       extendOptions = extendOptions || {};
@@ -5930,6 +5949,7 @@
      * 比如 Vue.component(compName, {xx}) 结果是 this.options.components.compName = 组件构造函数
      * ASSET_TYPES = ['component', 'directive', 'filter']
      */
+    console.info(' --添加Asset 注册器 Vue.component, .directive, .filter');
     ASSET_TYPES.forEach(function (type) {
       Vue[type] = function (
         id,
@@ -6108,12 +6128,14 @@
         );
       };
     }
+    console.info(' --添加 Vue.config');
     Object.defineProperty(Vue, "config", configDef);
 
     // exposed util methods.
     // NOTE: these are not considered part of the public API - avoid relying on
     // them unless you are aware of the risk.
     // 除非你知道使用风险，否则不要轻易使用这些public api(而且会经常发生变化)
+    console.info(' --添加 Vue.util');
     Vue.util = {
       warn: warn,
       extend: extend,
@@ -6121,16 +6143,21 @@
       defineReactive: defineReactive,
     };
 
+    console.info(' --添加 Vue.set');
     Vue.set = set;
+    console.info(' --添加 Vue.delete');
     Vue.delete = del;
+    console.info(' --添加 Vue.nextTick');
     Vue.nextTick = nextTick;
 
     // 2.6 explicit observable API
+      console.info(' --添加 Vue.observable (2.6 explicit observable API)');
     Vue.observable = function (obj) {
       observe(obj);
       return obj
     };
 
+    console.info(' --添加 Vue.options: .components, .directives, .filters');
     Vue.options = Object.create(null);
     // components, directives, filters
     ASSET_TYPES.forEach(function (type) {
@@ -6139,8 +6166,10 @@
 
     // this is used to identify the "base" constructor to extend all plain-object
     // components with in Weex's multi-instance scenarios.
+    console.info(' --添加 Vue.options._base = Vue');
     Vue.options._base = Vue; // 实例化子组件的时候用它
-
+    
+    console.info(' --添加 内置组件 KeepAlive, Vue.options.components: .KeepAlive');
     extend(Vue.options.components, builtInComponents); // 内置组件 目前有 keep-alive、transition 和 transition-group
 
     initUse(Vue); // .use 安装插件 { install } 
@@ -6149,17 +6178,19 @@
     initAssetRegisters(Vue); // component directive filter
   }
 
-  /** 
-   * main entry start
-   * Vue的起点 - new 之前已经完成所有的初始化方法
-   */
+  // Level 3
+  console.info('Lvevl 3');
 
+  console.info(' 初始化全局API initGlobalAPI');
   initGlobalAPI(Vue); // 初始化Vue本身的全局API
+  console.info(' 初始化全局API initGlobalAPI 结束');
 
+  console.info(' --添加 Vue.prototype.$isServer');
   Object.defineProperty(Vue.prototype, '$isServer', {
     get: isServerRendering
   });
 
+  console.info(' --添加 Vue.prototype.$ssrContext');
   Object.defineProperty(Vue.prototype, '$ssrContext', {
     get: function get () {
       /* istanbul ignore next */
@@ -6168,10 +6199,12 @@
   });
 
   // expose FunctionalRenderContext for ssr runtime helper installation
+  console.info(' --添加 Vue.prototype.FunctionalRenderContext');
   Object.defineProperty(Vue, 'FunctionalRenderContext', {
     value: FunctionalRenderContext
   });
 
+  console.info(' --添加 Vue.version');
   Vue.version = '2.6.12';
 
   /*  */
@@ -9228,7 +9261,7 @@
   // nodeOps '平台dom'的一些操作方法
   // modules 平台的一些模块
   var params = { nodeOps: nodeOps, modules: modules };
-  console.log(params);
+  // console.log(params)
   /**
    * 函数柯里化的技巧和应用场景：
    * 在web和weex环境下，把虚拟dom映射到‘平台dom’的方法是不同的，把代码分散到各个目录的
@@ -9810,8 +9843,11 @@
   };
 
   /*  */
+  // Level 2
+  console.info('Level 2');
 
   // install platform specific utils
+  console.info(' --添加 平台特殊的utils方法 Vue.config.mustUseProp, .isReservedTag, .isReservedAttr, .getTagNamespace, .isUnknownElement');
   Vue.config.mustUseProp = mustUseProp;
   Vue.config.isReservedTag = isReservedTag;
   Vue.config.isReservedAttr = isReservedAttr;
@@ -9819,14 +9855,20 @@
   Vue.config.isUnknownElement = isUnknownElement;
 
   // install platform runtime directives & components
+  console.info(' --添加 平台运行时的指令和组件 Vue.options.directives, .components');
+
+  console.info(' --添加 Vue.options.directives: mode, show');
   extend(Vue.options.directives, platformDirectives);
+  console.info(' --添加 Vue.options.components: Transition, TransitionGroup');
   extend(Vue.options.components, platformComponents);
 
   // install platform patch function
+  console.info(' --添加 Vue.options.__patch__');
   Vue.prototype.__patch__ = inBrowser ? patch : noop; // 不需要传参 createPatchFunction => patch
 
   // public mount method
   // 公共的 $mount 定义的地方
+  console.info(' --添加 Vue.options.$mount');
   Vue.prototype.$mount = function (
     el,
     hydrating
@@ -12754,12 +12796,15 @@
   var shouldDecodeNewlinesForHref = inBrowser ? getShouldDecode(true) : false;
 
   /*  */
+  // Level 1
+  console.info('Level 1');
 
   var idToTemplate = cached(function (id) { // 没看懂cached的意义
     var el = query(id);
     return el && el.innerHTML;
   });
 
+  console.info(' --重写 Vue.prototype.$mount 根据不同平台 web/weex');
   var mount = Vue.prototype.$mount; // 缓存 public method
   Vue.prototype.$mount = function (
     el,
@@ -12776,7 +12821,6 @@
         );
       return this;
     }
-    debugger
     // 取值的优先级 render、 template、 el （只取其一，后面的会被忽略）
     var options = this.$options;
     // resolve template/el and convert to render function
@@ -12866,7 +12910,10 @@
   }
 
   // key point
+  console.info(' --添加 Vue.compile');
   Vue.compile = compileToFunctions;
+
+  console.info(' --初始化 Vue 结束');
 
   return Vue;
 

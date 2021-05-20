@@ -397,10 +397,14 @@ export function stateMixin(Vue: Class<Component>) {
     };
   }
   // 将data和props挂载到Vue.prototype上，直接使用this.$data访问data
+  console.info(' --添加 Vue.prototype.$data')
   Object.defineProperty(Vue.prototype, "$data", dataDef);
+  console.info(' --添加 Vue.prototype.$props')
   Object.defineProperty(Vue.prototype, "$props", propsDef);
 
+  console.info(' --添加 Vue.prototype.$set')
   Vue.prototype.$set = set;
+  console.info(' --添加 Vue.prototype.$del')
   Vue.prototype.$delete = del;
 
   /**
@@ -410,6 +414,7 @@ export function stateMixin(Vue: Class<Component>) {
    * @param {*} options 原始对象
    * @returns unwatchFn函数，用来把自身从watcher列表里移除掉
    */
+    console.info(' --添加 Vue.prototype.$watch')
   Vue.prototype.$watch = function (
     expOrFn: string | Function,
     cb: any,

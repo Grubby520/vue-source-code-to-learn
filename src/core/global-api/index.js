@@ -31,12 +31,14 @@ export function initGlobalAPI(Vue: GlobalAPI) {
       );
     };
   }
+  console.info(' --添加 Vue.config')
   Object.defineProperty(Vue, "config", configDef);
 
   // exposed util methods.
   // NOTE: these are not considered part of the public API - avoid relying on
   // them unless you are aware of the risk.
   // 除非你知道使用风险，否则不要轻易使用这些public api(而且会经常发生变化)
+  console.info(' --添加 Vue.util')
   Vue.util = {
     warn,
     extend,
@@ -44,16 +46,21 @@ export function initGlobalAPI(Vue: GlobalAPI) {
     defineReactive,
   };
 
+  console.info(' --添加 Vue.set')
   Vue.set = set;
+  console.info(' --添加 Vue.delete')
   Vue.delete = del;
+  console.info(' --添加 Vue.nextTick')
   Vue.nextTick = nextTick;
 
   // 2.6 explicit observable API
+    console.info(' --添加 Vue.observable (2.6 explicit observable API)')
   Vue.observable = <T>(obj: T): T => {
     observe(obj)
     return obj
   };
 
+  console.info(' --添加 Vue.options: .components, .directives, .filters')
   Vue.options = Object.create(null);
   // components, directives, filters
   ASSET_TYPES.forEach((type) => {
@@ -62,8 +69,10 @@ export function initGlobalAPI(Vue: GlobalAPI) {
 
   // this is used to identify the "base" constructor to extend all plain-object
   // components with in Weex's multi-instance scenarios.
+  console.info(' --添加 Vue.options._base = Vue')
   Vue.options._base = Vue; // 实例化子组件的时候用它
-
+  
+  console.info(' --添加 内置组件 KeepAlive, Vue.options.components: .KeepAlive')
   extend(Vue.options.components, builtInComponents); // 内置组件 目前有 keep-alive、transition 和 transition-group
 
   initUse(Vue); // .use 安装插件 { install } 

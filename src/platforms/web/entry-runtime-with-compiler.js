@@ -3,7 +3,8 @@
 import config from "core/config";
 import { warn, cached } from "core/util/index";
 import { mark, measure } from "core/util/perf";
-
+// Level 1
+console.info('Level 1')
 import Vue from "./runtime/index"; // 来源
 import { query } from "./util/index";
 import { compileToFunctions } from "./compiler/index";
@@ -17,6 +18,7 @@ const idToTemplate = cached((id) => { // 没看懂cached的意义
   return el && el.innerHTML;
 });
 
+console.info(' --重写 Vue.prototype.$mount 根据不同平台 web/weex')
 const mount = Vue.prototype.$mount; // 缓存 public method
 Vue.prototype.$mount = function (
   el?: string | Element,
@@ -33,7 +35,6 @@ Vue.prototype.$mount = function (
       );
     return this;
   }
-  debugger
   // 取值的优先级 render、 template、 el （只取其一，后面的会被忽略）
   const options = this.$options;
   // resolve template/el and convert to render function
@@ -121,6 +122,9 @@ function getOuterHTML(el: Element): string {
 }
 
 // key point
+console.info(' --添加 Vue.compile')
 Vue.compile = compileToFunctions;
 
+console.info(' --初始化 Vue 结束')
 export default Vue; // 最终的Vue
+

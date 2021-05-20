@@ -67,6 +67,7 @@ export function initLifecycle(vm: Component) {
 
 export function lifecycleMixin(Vue: Class<Component>) {
   // VNode渲染成真实DOM，负责更新页面，是首次渲染、也是后续更新和patch的入口
+  console.info(' --添加 Vue.prototype._update')
   Vue.prototype._update = function (vnode: VNode, hydrating?: boolean) {
     console.log('._update: ', vnode);
     const vm: Component = this;
@@ -108,6 +109,7 @@ export function lifecycleMixin(Vue: Class<Component>) {
   };
 
   // 强制更新
+  console.info(' --添加 Vue.prototype.$forceUpdate')
   Vue.prototype.$forceUpdate = function () {
     const vm: Component = this;
     if (vm._watcher) {
@@ -117,6 +119,7 @@ export function lifecycleMixin(Vue: Class<Component>) {
 
   // 内部用的，完全销毁一个实例。清理它与其它实例的连接，解绑它的全部指令及事件监听器
   // 我们顶多用 beforeDestroy destroyed 钩子
+  console.info(' --添加 Vue.prototype.$destroy')
   Vue.prototype.$destroy = function () {
     const vm: Component = this;
     if (vm._isBeingDestroyed) {
@@ -227,7 +230,6 @@ export function mountComponent(
   } else {
     updateComponent = () => {
       // question ? -> 什么时候调用的 ? -> 下面new Watcher()  mountComponent调用的时候
-      // debugger
       // 五星级权重代码
       vm._update(vm._render(), hydrating); // _render生成VNode, _update渲染成真实的DOM
       // ._render() 对vm上的响应式数据进行访问，触发对应的getter

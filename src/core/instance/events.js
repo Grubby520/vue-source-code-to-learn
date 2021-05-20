@@ -59,6 +59,7 @@ export function updateComponentListeners(
 export function eventsMixin(Vue: Class<Component>) {
   const hookRE = /^hook:/;
   // 监听实例上的自定义事件。单个或者数组集合，fn回调，查看 vm._events
+  console.info(' --添加 Vue.prototype.$on')
   Vue.prototype.$on = function (
     event: string | Array<string>,
     fn: Function
@@ -82,6 +83,7 @@ export function eventsMixin(Vue: Class<Component>) {
   };
 
   // 只执行一次的设计：对fn进行一次包装，on函数里调用 $off，再执行fn
+  console.info(' --添加 Vue.prototype.$once')
   Vue.prototype.$once = function (event: string, fn: Function): Component {
     const vm: Component = this;
     function on() {
@@ -93,6 +95,7 @@ export function eventsMixin(Vue: Class<Component>) {
     return vm;
   };
 
+  console.info(' --添加 Vue.prototype.$off')
   Vue.prototype.$off = function (
     event?: string | Array<string>,
     fn?: Function
@@ -136,6 +139,7 @@ export function eventsMixin(Vue: Class<Component>) {
   };
 
   // 去 _event中拿到event的fn，依次执行
+  console.info(' --添加 Vue.prototype.$emit')
   Vue.prototype.$emit = function (event: string): Component {
     const vm: Component = this;
     if (process.env.NODE_ENV !== "production") {

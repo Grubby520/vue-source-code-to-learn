@@ -1,4 +1,3 @@
-// debugger
 import { initMixin } from "./init";
 import { stateMixin } from "./state";
 import { renderMixin } from "./render";
@@ -6,7 +5,11 @@ import { eventsMixin } from "./events";
 import { lifecycleMixin } from "./lifecycle";
 import { warn } from "../util/index";
 
+// Level 4
 // Vue构造函数 - 为啥不用Class?
+console.info('Level 4')
+console.info(' 初始化 Vue 开始')
+console.info(' --定义 Vue 构造函数')
 function Vue(options) {
   if (process.env.NODE_ENV !== "production" && !(this instanceof Vue)) {
     warn("Vue is a constructor and should be called with the `new` keyword");
@@ -23,6 +26,7 @@ function Vue(options) {
  * Vue.prototype
  * ._init
  */
+console.info(' 初始化 Vue initMixin')
 initMixin(Vue);
 /** 实例方法 / 【数据】
  * Vue.prototype
@@ -32,6 +36,7 @@ initMixin(Vue);
  * .$delete
  * .$watch
  */
+console.info(' 初始化 Vue stateMixin')
 stateMixin(Vue);
 /** 实例方法 / 【事件】
  * Vue.prototype
@@ -40,6 +45,7 @@ stateMixin(Vue);
  * .$off
  * .$emit
  */
+console.info(' 初始化 Vue eventsMixin')
 eventsMixin(Vue);
 /** 实例方法 / 【生命周期】
  * Vue.prototype
@@ -47,6 +53,7 @@ eventsMixin(Vue);
  * .$forceUpdate
  * .$destroy
  */
+console.info(' 初始化 Vue lifecycleMixin')
 lifecycleMixin(Vue);
 /**
  * Vue.prototype
@@ -54,6 +61,7 @@ lifecycleMixin(Vue);
  * ._render
  * .$nextTick
  */
+console.info(' 初始化 Vue renderMixin')
 renderMixin(Vue);
 
 export default Vue;

@@ -85,8 +85,10 @@ export function setCurrentRenderingInstance(vm: Component) {
 
 export function renderMixin(Vue: Class<Component>) {
   // install runtime convenience helpers
+  console.info(' --添加 Vue.prototype 17个render相关的渲染函数  Vue.prototype._o, _n, _s, _l, _t, _q, _i, _m, _f, _k, _b, _v, _e, _u, _g, _d, _p')
   installRenderHelpers(Vue.prototype); // 安装大量和渲染相关的简写的工具函数，用于compiler生成的render fn中
 
+  console.info(' --添加 Vue.prototype.$nextTick')
   Vue.prototype.$nextTick = function (fn: Function) {
     return nextTick(fn, this); // 加入浏览器异步任务队列（插队）
   };
@@ -95,6 +97,7 @@ export function renderMixin(Vue: Class<Component>) {
    * 生成VNode的核心函数 _render 
    * 核心：render.call(vm._renderProxy, vm.$createElement)
    */
+  console.info(' --添加 Vue.prototype._render')
   Vue.prototype._render = function (): VNode {
     const vm: Component = this;
     const { render, _parentVnode } = vm.$options;
@@ -118,7 +121,6 @@ export function renderMixin(Vue: Class<Component>) {
       // when parent component is patched.
       currentRenderingInstance = vm;
       // question ?
-      // debugger
       vnode = render.call(vm._renderProxy, vm.$createElement); // vm.$options.render 返回vnode
       //       function anonymous(
       // ) {

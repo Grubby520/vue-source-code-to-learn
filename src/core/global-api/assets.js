@@ -11,6 +11,7 @@ export function initAssetRegisters(Vue: GlobalAPI) {
    * 比如 Vue.component(compName, {xx}) 结果是 this.options.components.compName = 组件构造函数
    * ASSET_TYPES = ['component', 'directive', 'filter']
    */
+  console.info(' --添加Asset 注册器 Vue.component, .directive, .filter')
   ASSET_TYPES.forEach((type) => {
     Vue[type] = function (
       id: string,

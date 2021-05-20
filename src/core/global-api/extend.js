@@ -19,6 +19,7 @@ export function initExtend(Vue: GlobalAPI) {
    * .vue定义的Component 实际文件是 export default {...} 一个普通的Object对象
    * 原型继承：纯对象转换成继承Vue的Sub构造器函数，然后对Sub本身扩展了一些属性
    */
+  console.info(' --添加 Vue.extend')
   Vue.extend = function (extendOptions: Object): Function {
     console.log(extendOptions)
     extendOptions = extendOptions || {};

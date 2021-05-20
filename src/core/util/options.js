@@ -471,7 +471,6 @@ export function resolveAsset(
   if (typeof id !== "string") {
     return;
   }
-  debugger
   const assets = options[type]; // components属性值
   // check local registration variations first
   if (hasOwn(assets, id)) return assets[id]; // 值是 name 或者 id
