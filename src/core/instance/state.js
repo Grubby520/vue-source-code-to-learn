@@ -404,7 +404,7 @@ export function stateMixin(Vue: Class<Component>) {
 
   console.info(' --添加 Vue.prototype.$set')
   Vue.prototype.$set = set;
-  console.info(' --添加 Vue.prototype.$del')
+  console.info(' --添加 Vue.prototype.$delete')
   Vue.prototype.$delete = del;
 
   /**

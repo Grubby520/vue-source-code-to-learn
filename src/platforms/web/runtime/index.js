@@ -42,7 +42,7 @@ Vue.prototype.__patch__ = inBrowser ? patch : noop // 不需要传参 createPatc
 
 // public mount method
 // 公共的 $mount 定义的地方
-console.info(' --添加 Vue.options.$mount')
+console.info(' --添加 Vue.prototype.$mount')
 Vue.prototype.$mount = function (
   el?: string | Element,
   hydrating?: boolean

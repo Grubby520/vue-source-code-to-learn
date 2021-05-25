@@ -5467,7 +5467,7 @@
 
     console.info(' --添加 Vue.prototype.$set');
     Vue.prototype.$set = set;
-    console.info(' --添加 Vue.prototype.$del');
+    console.info(' --添加 Vue.prototype.$delete');
     Vue.prototype.$delete = del;
 
     /**
@@ -5525,13 +5525,13 @@
       // 每一个vue实例都有一个_uid，且依次递增
       vm._uid = uid$2++;
 
-      var startTag, endTag;
+      // let startTag, endTag;
       /* istanbul ignore if */
-      if ( config.performance && mark) {
-        startTag = "vue-perf-start:" + (vm._uid);
-        endTag = "vue-perf-end:" + (vm._uid);
-        mark(startTag);
-      }
+      // if ("development" !== "production" && config.performance && mark) {
+      //   startTag = `vue-perf-start:${vm._uid}`;
+      //   endTag = `vue-perf-end:${vm._uid}`;
+      //   mark(startTag);
+      // }
 
       // a flag to avoid this being observed
       vm._isVue = true;
@@ -9868,7 +9868,7 @@
 
   // public mount method
   // 公共的 $mount 定义的地方
-  console.info(' --添加 Vue.options.$mount');
+  console.info(' --添加 Vue.prototype.$mount');
   Vue.prototype.$mount = function (
     el,
     hydrating
@@ -10086,7 +10086,7 @@
   var qnameCapture = "((?:" + ncname + "\\:)?" + ncname + ")";
   var startTagOpen = new RegExp(("^<" + qnameCapture));
   var startTagClose = /^\s*(\/?)>/;
-  var endTag = new RegExp(("^<\\/" + qnameCapture + "[^>]*>"));
+  var endTag$1 = new RegExp(("^<\\/" + qnameCapture + "[^>]*>"));
   var doctype = /^<!DOCTYPE [^>]+>/i;
   // #7298: escape - to avoid being passed as HTML comment when inlined in page
   var comment = /^<!\--/;
@@ -10161,7 +10161,7 @@
           }
 
           // End tag:
-          var endTagMatch = html.match(endTag);
+          var endTagMatch = html.match(endTag$1);
           if (endTagMatch) {
             var curIndex = index;
             advance(endTagMatch[0].length);
@@ -10184,7 +10184,7 @@
         if (textEnd >= 0) {
           rest = html.slice(textEnd);
           while (
-            !endTag.test(rest) &&
+            !endTag$1.test(rest) &&
             !startTagOpen.test(rest) &&
             !comment.test(rest) &&
             !conditionalComment.test(rest)

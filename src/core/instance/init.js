@@ -21,13 +21,13 @@ export function initMixin(Vue: Class<Component>) {
     // 每一个vue实例都有一个_uid，且依次递增
     vm._uid = uid++;
 
-    let startTag, endTag;
+    // let startTag, endTag;
     /* istanbul ignore if */
-    if (process.env.NODE_ENV !== "production" && config.performance && mark) {
-      startTag = `vue-perf-start:${vm._uid}`;
-      endTag = `vue-perf-end:${vm._uid}`;
-      mark(startTag);
-    }
+    // if (process.env.NODE_ENV !== "production" && config.performance && mark) {
+    //   startTag = `vue-perf-start:${vm._uid}`;
+    //   endTag = `vue-perf-end:${vm._uid}`;
+    //   mark(startTag);
+    // }
 
     // a flag to avoid this being observed
     vm._isVue = true;

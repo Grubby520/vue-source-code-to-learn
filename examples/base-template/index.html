@@ -12,6 +12,7 @@
   </div>
   <script src="../../dist/vue.js"></script>
   <script>
+    console.info('-- new Vue() 实例化 开始 ------------------------------------------------')
     const app = new Vue({
       el: '#app',
       data() {
@@ -20,7 +21,8 @@
         }
       }
     });
-    console.log(app);
+    console.info('-- new Vue() 实例化 结束 ------------------------------------------------')
+    console.info(app);
   </script>
 </body>
 </html>
