@@ -71,7 +71,7 @@ export class Observer {
    * Walk through all properties and convert them into
    * getter/setters. This method should only be called when
    * value type is Object.
-   * 只有对象才走这里，给所有property设置响应式（不管层级有多深）
+   * 只有对象才走这里，给所有property设置响应式（不管层级有多深）data的响应式
    */
   walk(obj: Object) {
     const keys = Object.keys(obj);
@@ -109,6 +109,7 @@ function protoAugment(target, src: Object) {
  */
 /* istanbul ignore next */
 function copyAugment(target: Object, src: Object, keys: Array<string>) {
+  console.log('src: ',src)
   for (let i = 0, l = keys.length; i < l; i++) {
     const key = keys[i];
     def(target, key, src[key]);
@@ -169,10 +170,11 @@ export function defineReactive(
   // cater for pre-defined getter/setters
   const getter = property && property.get;
   const setter = property && property.set;
+  // 这里是有一个什么样的边界问题？
   if ((!getter || setter) && arguments.length === 2) {
     val = obj[key];
   }
-
+  // 调用 observe(),递归深度观察对象（属性的值可能又是一个数组或纯对象）
   let childOb = !shallow && observe(val); // ? wtf -> 调用Vue.set -> defineReactive，对新增的val值创建 .__ob__属性 (new Observer())
   Object.defineProperty(obj, key, {
     enumerable: true,
@@ -319,7 +321,7 @@ export function del(target: Array<any> | Object, key: any) {
  * Collect dependencies on array elements when the array is touched, since
  * we cannot intercept array element access like property getters.
  * 拦截数组的元素不像属性getters函数那样，只能当数组touched时，去递归的收集依赖关系
- * qs: 怎么算是touched?
+ * qs: 怎么算是touched? - 查值，触发 get
  */
 function dependArray(value: Array<any>) {
   for (let e, i = 0, l = value.length; i < l; i++) {

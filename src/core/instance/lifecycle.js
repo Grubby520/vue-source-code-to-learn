@@ -42,7 +42,7 @@ export function initLifecycle(vm: Component) {
 
   // locate first non-abstract parent
   let parent = options.parent;
-  // ??? abstract属性的含义
+  // ??? abstract属性的含义 - keep-alive 组件
   if (parent && !options.abstract) {
     while (parent.$options.abstract && parent.$parent) {
       // 向上查找，直到第一个 non-abstract parent
@@ -398,7 +398,7 @@ export function callHook(vm: Component, hook: string) {
     }
   }
   if (vm._hasHookEvent) {
-    vm.$emit("hook:" + hook);
+    vm.$emit("hook:" + hook); // 事件分发，组件通过监听 `hook:beforeDestroy` 事件；
   }
   popTarget();
 }

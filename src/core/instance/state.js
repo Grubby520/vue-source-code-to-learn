@@ -122,9 +122,9 @@ function initProps(vm: Component, propsOptions: Object) {
         if (!isRoot && !isUpdatingChildComponent) {
           warn(
             `Avoid mutating a prop directly since the value will be ` +
-              `overwritten whenever the parent component re-renders. ` +
-              `Instead, use a data or computed property based on the prop's ` +
-              `value. Prop being mutated: "${key}"`,
+            `overwritten whenever the parent component re-renders. ` +
+            `Instead, use a data or computed property based on the prop's ` +
+            `value. Prop being mutated: "${key}"`,
             vm
           );
         }
@@ -142,18 +142,20 @@ function initProps(vm: Component, propsOptions: Object) {
   toggleObserving(true); // shouldObserve为true
 }
 
+// main entry
 function initData(vm: Component) {
   let data = vm.$options.data;
   // data.call(vm, vm) 这玩意儿还能把vm当参数？
   // 必须定义成function，返回Object / each instance can maintain an independent copy of the returned data object
   // 每个实例都是返回的数据对象的独立的副本
+  // extra `_data` property
   data = vm._data = typeof data === "function" ? getData(data, vm) : data || {};
   if (!isPlainObject(data)) {
     data = {};
     process.env.NODE_ENV !== "production" &&
       warn(
         "data functions should return an object:\n" +
-          "https://vuejs.org/v2/guide/components.html#data-Must-Be-a-Function",
+        "https://vuejs.org/v2/guide/components.html#data-Must-Be-a-Function",
         vm
       );
   }
@@ -179,7 +181,7 @@ function initData(vm: Component) {
       process.env.NODE_ENV !== "production" &&
         warn(
           `The data property "${key}" is already declared as a prop. ` +
-            `Use prop default value instead.`,
+          `Use prop default value instead.`,
           vm
         );
     } else if (!isReserved(key)) {
@@ -203,7 +205,7 @@ export function getData(data: Function, vm: Component): any {
   }
 }
 
-const computedWatcherOptions = { lazy: true };
+const computedWatcherOptions = { lazy: true }; // lazy watcher(computed watcher)计算属性 生成的watcher, 默认 {lazy: true}
 
 // 重点 defineComputed
 function initComputed(vm: Component, computed: Object) {
@@ -290,12 +292,16 @@ function createComputedGetter(key) {
   return function computedGetter() {
     const watcher = this._computedWatchers && this._computedWatchers[key];
     if (watcher) {
+      if (key === 'show') {
+        console.log('show')
+      }
       // watcher的dirty属性
       if (watcher.dirty) {
         watcher.evaluate(); // 更新并重置dirty为false
       }
+      // 若template中有使用，会多一个 render watcher `() = > vm._update(vm._render(), hydrating)`
       if (Dep.target) {
-        watcher.depend(); // ?
+        watcher.depend(); // ? 渲染阶段，重新收集依赖
       }
       return watcher.value;
     }
@@ -317,9 +323,9 @@ function initMethods(vm: Component, methods: Object) {
         // key必须是一个函数
         warn(
           `Method "${key}" has type "${typeof methods[
-            key
+          key
           ]}" in the component definition. ` +
-            `Did you reference the function correctly?`,
+          `Did you reference the function correctly?`,
           vm
         );
       }
@@ -331,7 +337,7 @@ function initMethods(vm: Component, methods: Object) {
         // 不要以$或_开头
         warn(
           `Method "${key}" conflicts with an existing Vue instance method. ` +
-            `Avoid defining component methods that start with _ or $.`
+          `Avoid defining component methods that start with _ or $.`
         );
       }
     }
@@ -367,7 +373,7 @@ function createWatcher(
     // 不难发现：handler的值是一个字符串的话，就会去vm实例上去找有没有这个handler属性（methods上的方法）
     handler = vm[handler]; // 也可能找不到，是个undefined
   }
-  return vm.$watch(expOrFn, handler, options);
+  return vm.$watch(expOrFn, handler, options); // watch 属性 是通过 Vue.prototype.$watch 方法初始化的
 }
 
 export function stateMixin(Vue: Class<Component>) {
@@ -387,7 +393,7 @@ export function stateMixin(Vue: Class<Component>) {
     dataDef.set = function () {
       warn(
         "Avoid replacing instance root $data. " +
-          "Use nested data properties instead.",
+        "Use nested data properties instead.",
         this
       );
     };
@@ -414,7 +420,7 @@ export function stateMixin(Vue: Class<Component>) {
    * @param {*} options 原始对象
    * @returns unwatchFn函数，用来把自身从watcher列表里移除掉
    */
-    console.info(' --添加 Vue.prototype.$watch')
+  console.info(' --添加 Vue.prototype.$watch')
   Vue.prototype.$watch = function (
     expOrFn: string | Function,
     cb: any,
@@ -426,8 +432,8 @@ export function stateMixin(Vue: Class<Component>) {
       return createWatcher(vm, expOrFn, cb, options);
     }
     options = options || {};
-    // ? user是什么 表示是用户watcher还是渲染watcher
-    options.user = true; // 用户自定义的watcher
+    // ? user是什么 表示是用户watcher还是渲染watcher - user watcher，即为 watch 属性中定义的属性；
+    options.user = true; // 用户自定义的watcher,默认 {user: true}
     const watcher = new Watcher(vm, expOrFn, cb, options);
     // 如果设置immediate为true，立即执行一次回调函数
     if (options.immediate) {

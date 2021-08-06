@@ -25,12 +25,15 @@ function flushCallbacks() {
 // However, it has subtle problems when state is changed right before repaint
 // (e.g. #6813, out-in transitions).
 // Also, using (macro) tasks in event handler would cause some weird behaviors
-// that cannot be circumvented (e.g. #7109, #7153, #7546, #7834, #8109).
+// that cannot be circumvented规避掉 (e.g. #7109, #7153, #7546, #7834, #8109).
 // So we now use microtasks everywhere, again.
-// A major drawback of this tradeoff is that there are some scenarios
+// A major drawback缺点 of this tradeoff权衡 is that there are some scenarios
 // where microtasks have too high a priority and fire in between supposedly
 // sequential events (e.g. #4521, #6690, which have workarounds)
 // or even between bubbling of the same event (#6566).
+
+// So we now use microtasks everywhere, again.A major drawback of this tradeoff is that there are some scenarios,where microtasks have too high a priority and fire in between supposedly sequential events
+// 权衡之下采用微任务，但是有一个主要缺点，微任务拥有太高的优先级（可能会在假定的连续事件之间触发）
 let timerFunc;
 
 // The nextTick behavior leverages the microtask queue, which can be accessed
@@ -133,7 +136,7 @@ export function nextTick(cb?: Function, ctx?: Object) {
   if (!cb && typeof Promise !== "undefined") {
     // 对没有传入cb的兼容处理，可以这样Promise化的调用 this.$nextTick().then(() => {}) 
     return new Promise((resolve) => {
-      _resolve = resolve;
+      _resolve = resolve; // 等到callbacks里的函数执行，Promise settled，then回调执行；
     });
   }
 }

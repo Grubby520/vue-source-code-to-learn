@@ -425,11 +425,11 @@ export function mergeOptions(
   // mergeOptions 处理过的对象会含有 _base 属性
   if (!child._base) {
     if (child.extends) {
-      parent = mergeOptions(parent, child.extends, vm);
+      parent = mergeOptions(parent, child.extends, vm); // extends 合并调用
     }
     if (child.mixins) {
       for (let i = 0, l = child.mixins.length; i < l; i++) {
-        parent = mergeOptions(parent, child.mixins[i], vm);
+        parent = mergeOptions(parent, child.mixins[i], vm); // mixins 合并调用
       }
     }
   }

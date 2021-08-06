@@ -93,7 +93,7 @@ export default class Watcher {
     this.newDepIds = new Set();
 
     this.expression =
-      process.env.NODE_ENV !== "production" ? expOrFn.toString() : "";
+      process.env.NODE_ENV !== "production" ? expOrFn.toString() : ""; // 开发环境，把getter函数/watch回调 toString
     // parse expression for getter
     if (typeof expOrFn === "function") {
       this.getter = expOrFn;
@@ -153,7 +153,7 @@ export default class Watcher {
 
   /**
    * Add a dependency to this directive.
-   * watcher中添加dep，dep中添加watcher, wtf ?
+   * watcher中添加dep，dep中添加watcher, wtf ? 循环引用
    */
   addDep(dep: Dep) {
     const id = dep.id;

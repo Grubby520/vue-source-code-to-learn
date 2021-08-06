@@ -116,8 +116,8 @@ export function createBundleRendererCreator (
         const res = new PassThrough()
         run(context).catch(err => {
           rewriteErrorTrace(err, maps)
-          // avoid emitting synchronously before user can
-          // attach error listener
+          // avoid emitting synchronously before user can attach error listener
+          // 避免在用户可以附加错误侦听器之前同步发出
           process.nextTick(() => {
             res.emit('error', err)
           })
