@@ -118,7 +118,7 @@ export function nextTick(cb?: Function, ctx?: Object) {
         handleError(e, ctx, "nextTick");
       }
     } else if (_resolve) {
-      _resolve(ctx); // ?
+      _resolve(ctx); // ? -> 妙，兼容没有 cb 的情况
     }
   });
   if (!pending) {
